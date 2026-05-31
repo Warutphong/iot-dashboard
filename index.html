@@ -1,230 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Smart Environment</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-body{
-background:#0f172a;
-color:white;
-font-family:Arial,sans-serif;
-text-align:center;
-padding:20px;
-margin:0;
-}
-
-.card{
-background:#1e293b;
-padding:20px;
-margin:15px auto;
-max-width:500px;
-border-radius:20px;
-box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-.value{
-font-size:42px;
-font-weight:bold;
-}
-
-.title {
-font-size: 20px;
-color: #38bdf8;
-margin-top: 0;
-}
-
-/* ปุ่มกดเลือกหน่วยวัด */
-.unit-btn {
-padding: 10px 20px;
-margin: 5px;
-font-size: 18px;
-border: none;
-border-radius: 10px;
-cursor: pointer;
-background: #334155;
-color: white;
-transition: 0.2s;
-}
-.unit-btn:hover { background: #475569; }
-
-/* ปุ่มกดควบคุมอุปกรณ์ */
-.ctrl-btn {
-padding: 12px 30px;
-font-size: 18px;
-font-weight: bold;
-border-radius: 50px;
-border: none;
-cursor: pointer;
-transition: 0.3s;
-margin-top: 10px;
-}
-.btn-on { background: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-.btn-off { background: #ef4444; color: white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
-
-canvas{
-background:white;
-border-radius:15px;
-padding: 10px;
-}
-
-.status{
-font-size: 20px;
-font-weight: bold;
-}
-</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Smart Environment Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background:#0f172a; color:white; font-family:Arial, sans-serif; text-align:center; padding:20px; }
+        .card { background:#1e293b; padding:20px; margin:15px auto; max-width:500px; border-radius:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .value { font-size:42px; font-weight:bold; color: #38bdf8; }
+        .status { font-size: 18px; font-weight: bold; margin-top: 10px; }
+    </style>
 </head>
-
 <body>
+    <h1>🌍 Smart Environment</h1>
+    <div class="card">
+        <h2>Temperature</h2>
+        <div id="temp" class="value">🌡 -- °C</div>
+    </div>
+    <div class="card">
+        <h2>Humidity</h2>
+        <div id="hum" class="value">💧 -- %</div>
+    </div>
+    <div class="card">
+        <div id="status" class="status">⏳ Connecting to Cloud...</div>
+    </div>
+    <div class="card"><canvas id="tempChart"></canvas></div>
 
-<h1>🌍 Smart Environment</h1>
+    <script>
+        // ใส่ URL ของ Google Apps Script ของคุณที่นี่
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKQAPzEOXZkVf2ZMB2IqFK2jiqbUQXxf1hMPC9wZTxJ5vs5BY-b7rx6ze3fQSnaNiA/exec";
 
-<div class="card">
-<h2 class="title">Temperature</h2>
-<div id="temp" class="value">🌡 -- °C</div>
-</div>
+        const labels = [];
+        const tempData = [];
+        const tempChart = new Chart(document.getElementById('tempChart'), {
+            type: 'line',
+            data: { labels: labels, datasets: [{ label: 'Temp History', data: tempData, borderColor: '#38bdf8', tension: 0.3 }] },
+            options: { responsive: true }
+        });
 
-<div class="card">
-<h2 class="title">Humidity</h2>
-<div id="hum" class="value">💧 -- %</div>
-</div>
+        async function loadData() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
 
-<div class="card">
-<button class="unit-btn" onclick="changeUnit('C')">°C</button>
-<button class="unit-btn" onclick="changeUnit('F')">°F</button>
-</div>
-
-<div class="card">
-<h2 class="title">Device Control</h2>
-<p style="color: #94a3b8; margin: 5px 0;">สถานะอุปกรณ์: <span id="device-text" style="font-weight:bold; color:#ef4444;">ปิดอยู่</span></p>
-<button id="ctrl-btn" class="ctrl-btn btn-off" onclick="toggleDevice()">เปิดใช้งาน</button>
-</div>
-
-<div class="card">
-<div id="status" class="status">
-⏳ Connecting...
-</div>
-</div>
-
-<div class="card">
-<canvas id="tempChart"></canvas>
-</div>
-
-<script>
-// แก้ไข IP ให้ตรงกับ IP บอร์ดจริงของคุณที่แสดงใน Serial Monitor ของคุณ (เดิมระบุ 192.168.1.254)
-const ARDUINO_IP = "192.168.1.254"; 
-
-let unit = "C";
-let deviceState = 0; // 0 = ปิด, 1 = เปิด
-
-const labels = [];
-const tempData = [];
-
-const tempChart = new Chart(
-document.getElementById('tempChart'),
-{
-type:'line',
-data:{
-labels:labels,
-datasets:[{
-label:'Temperature History',
-data:tempData,
-borderColor: '#38bdf8',
-backgroundColor: 'rgba(56, 189, 248, 0.2)',
-tension: 0.3
-}]
-},
-options:{
-responsive:true
-}
-}
-);
-
-function changeUnit(newUnit) {
-unit = newUnit;
-loadData(); // ให้โหลดหน้าเว็บใหม่เพื่ออัปเดตหน่วยทันที
-}
-
-async function loadData(){
-try{
-const response = await fetch(`http://${ARDUINO_IP}/data`);
-const data = await response.json();
-
-let temp = data.temp;
-
-// คำนวณแปลงหน่วย F หากเลือกไว้
-if(unit==="F"){
-temp = (temp * 9/5) + 32;
-}
-
-document.getElementById("temp").innerHTML = "🌡 " + temp.toFixed(1) + " °" + unit;
-document.getElementById("hum").innerHTML = "💧 " + data.hum.toFixed(1) + " %";
-document.getElementById("status").innerHTML = "🟢 Online";
-document.getElementById("status").style.color = "#10b981";
-
-// 🆕 ซิงค์ข้อมูลสถานะปุ่มกดที่ส่งกลับมาจากบอร์ด Arduino
-if (data.relay !== undefined) {
-deviceState = data.relay;
-updateButtonUI();
-}
-
-// อัปเดตข้อมูลกราฟ
-labels.push(new Date().toLocaleTimeString());
-tempData.push(temp);
-
-if(labels.length > 20){
-labels.shift();
-tempData.shift();
-}
-tempChart.update();
-
-} catch(err){
-document.getElementById("status").innerHTML = "🔴 Offline";
-document.getElementById("status").style.color = "#ef4444";
-console.log(err);
-}
-}
-
-// 🆕 ฟังก์ชันส่งคำสั่งเปิด-ปิดอุปกรณ์ไปยังบอร์ด Arduino
-async function toggleDevice() {
-const nextState = deviceState === 0 ? 1 : 0;
-try {
-const response = await fetch(`http://${ARDUINO_IP}/relay?status=${nextState}`);
-const data = await response.json();
-deviceState = data.relay;
-updateButtonUI();
-} catch (err) {
-alert('ส่งคำสั่งล้มเหลว ตรวจสอบการเชื่อมต่อบอร์ด หรือเช็คว่าอยู่ใน WiFi วงเดียวกันหรือไม่');
-console.log(err);
-}
-}
-
-// 🆕 ฟังก์ชันปรับแต่ง UI หน้าตาของปุ่มเปิด-ปิด
-function updateButtonUI() {
-const btn = document.getElementById('ctrl-btn');
-const txt = document.getElementById('device-text');
-if (deviceState === 1) {
-btn.innerText = "ปิดใช้งาน";
-btn.className = "ctrl-btn btn-on";
-txt.innerText = "เปิดอยู่";
-txt.style.color = "#10b981";
-} else {
-btn.innerText = "เปิดใช้งาน";
-btn.className = "ctrl-btn btn-off";
-txt.innerText = "ปิดอยู่";
-txt.style.color = "#ef4444";
-}
-}
-
-// เริ่มต้นทำงานครั้งแรกและตั้ง Loop ให้เช็คข้อมูลทุกๆ 2 วินาที
-loadData();
-setInterval(loadData, 2000);
-
-</script>
-
+                document.getElementById("temp").innerHTML = "🌡 " + parseFloat(data.temp).toFixed(1) + " °C";
+                document.getElementById("hum").innerHTML = "💧 " + parseFloat(data.hum).toFixed(1) + " %";
+                document.getElementById("status").innerHTML = "🟢 Online (Cloud Mode)";
+                
+                labels.push(new Date().toLocaleTimeString());
+                tempData.push(data.temp);
+                if(labels.length > 20) { labels.shift(); tempData.shift(); }
+                tempChart.update();
+            } catch(err) {
+                document.getElementById("status").innerHTML = "🔴 Offline (Cannot connect)";
+            }
+        }
+        
+        loadData();
+        setInterval(loadData, 5000);
+    </script>
 </body>
 </html>
