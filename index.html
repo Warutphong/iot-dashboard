@@ -13,16 +13,17 @@
 body{
 background:#0f172a;
 color:white;
-font-family:Arial;
+font-family:Arial,sans-serif;
 text-align:center;
 padding:20px;
+margin:0;
 }
 
 .card{
 background:#1e293b;
 padding:20px;
 margin:15px auto;
-max-width:450px;
+max-width:500px;
 border-radius:20px;
 }
 
@@ -33,8 +34,8 @@ font-weight:bold;
 
 button{
 padding:10px 20px;
-font-size:18px;
 margin:5px;
+font-size:18px;
 border:none;
 border-radius:10px;
 cursor:pointer;
@@ -43,6 +44,11 @@ cursor:pointer;
 canvas{
 background:white;
 border-radius:15px;
+}
+
+.status{
+font-size:20px;
+font-weight:bold;
 }
 
 </style>
@@ -68,64 +74,94 @@ border-radius:15px;
 </div>
 
 <div class="card">
-<canvas id="chart"></canvas>
+<div id="status" class="status">
+🟢 Online
+</div>
+</div>
+
+<div class="card">
+<canvas id="tempChart"></canvas>
 </div>
 
 <script>
 
-let unit='C';
+const ARDUINO_IP = "192.168.1.254";
 
-const labels=[];
-const temps=[];
+let unit = "C";
 
-const chart=new Chart(
-document.getElementById('chart'),
+const labels = [];
+const tempData = [];
+
+const tempChart = new Chart(
+document.getElementById('tempChart'),
 {
 type:'line',
 data:{
 labels:labels,
 datasets:[{
 label:'Temperature',
-data:temps
+data:tempData
 }]
+},
+options:{
+responsive:true
 }
 }
 );
 
 async function loadData(){
 
-const response=
+try{
+
+const response =
 await fetch(
-'http://192.168.1.254/data'
+`http://${ARDUINO_IP}/data`
 );
 
-const data=
+const data =
 await response.json();
 
-let t=data.temp;
+let temp = data.temp;
 
-if(unit==='F'){
-t=(t*9/5)+32;
+if(unit==="F"){
+temp = (temp * 9/5) + 32;
 }
 
-document.getElementById('temp')
-.innerHTML='🌡 '+t.toFixed(1)+' '+unit;
+document.getElementById("temp")
+.innerHTML =
+"🌡 " + temp.toFixed(1) + " " + unit;
 
-document.getElementById('hum')
-.innerHTML='💧 '+data.hum.toFixed(1)+' %';
+document.getElementById("hum")
+.innerHTML =
+"💧 " + data.hum.toFixed(1) + " %";
+
+document.getElementById("status")
+.innerHTML =
+"🟢 Online";
 
 labels.push(
 new Date().toLocaleTimeString()
 );
 
-temps.push(t);
+tempData.push(temp);
 
-if(labels.length>20){
+if(labels.length > 20){
 labels.shift();
-temps.shift();
+tempData.shift();
 }
 
-chart.update();
+tempChart.update();
+
+}
+catch(err){
+
+document.getElementById("status")
+.innerHTML =
+"🔴 Offline";
+
+console.log(err);
+
+}
 
 }
 
