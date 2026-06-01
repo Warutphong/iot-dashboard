@@ -373,41 +373,53 @@
 
        async function loadData() {
             try {
-                // 1. ดึงข้อมูลจาก Google Sheets (เพิ่มโหมด cors)
+                // ดึงข้อมูลจาก Google Sheets พร้อมเปิดโหมด CORS ให้ปลอดภัย
                 const response = await fetch(SCRIPT_URL, {
                     method: 'GET',
                     mode: 'cors'
                 });
                 
-                if (!response.ok) throw new Error('Network response error');
-                
+                if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
+                console.log("ได้รับข้อมูลจาก Google Sheets สำเร็จ:", data);
 
-                // 2. ปรับให้ดึงค่าตรงกับตัวแปรที่ Google Script ส่งมา (แก้จาก data.current.temp เป็น data.temp)
-                // หาก Google Script ของคุณใช้ชื่ออื่น ให้แก้ตรง 'data.temp' กับ 'data.humidity' ให้ตรงกัน
-                currentCelsius = parseFloat(data.temp || data.current?.temp || 0); 
-                const curHum = parseFloat(data.humidity || data.hum || data.current?.hum || 0); 
-                
+                // ตรวจสอบและดึงค่าวัดอุณหภูมิปัจจุบัน (ยืดหยุ่นตามชื่อตัวแปรที่ส่งมา)
+                if (data.temp !== undefined) {
+                    currentCelsius = parseFloat(data.temp);
+                } else if (data.current && data.current.temp !== undefined) {
+                    currentCelsius = parseFloat(data.current.temp);
+                } else {
+                    currentCelsius = 0;
+                }
+
+                // ตรวจสอบและดึงค่าวัดความชื้นปัจจุบัน
+                let curHum = 0;
+                if (data.humidity !== undefined) {
+                    curHum = parseFloat(data.humidity);
+                } else if (data.hum !== undefined) {
+                    curHum = parseFloat(data.hum);
+                } else if (data.current && data.current.hum !== undefined) {
+                    curHum = parseFloat(data.current.hum);
+                }
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
 
-                // 3. จัดการข้อมูลกราฟประวัติ (History)
-                // ถ้า Google Script มีการส่งประวัติมาด้วย ก็ใช้ของจริง
+                // จัดการเรื่องกราฟประวัติย้อนหลัง (History)
                 if (data.history && data.history.length > 0) {
                     globalHistory = data.history;
                 } else {
-                    // ถ้ายังไม่มีประวัติส่งมา ให้พลอตค่าปัจจุบัน 1 จุดไปก่อนเพื่อไม่ให้กราฟพัง
+                    // หาก Google Script ยังไม่ส่งประวัติมา ให้สร้างจุดเวลาปัจจุบันขึ้นมา 1 จุดเพื่อให้กราฟไม่พัง
                     const now = new Date();
-                    const timeString = now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', hour12: false});
+                    const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
                     globalHistory = [{ time: timeString, temp: currentCelsius, hum: curHum }];
                 }
 
-                // 4. สั่งให้วาดกราฟและอัปเดตตัวเลข
+                // สั่งประมวลผลวาดกราฟและอัปเดตตัวเลขสถิติบนหน้าเว็บ
                 renderChartsData();
-                console.log("ดึงข้อมูลจริงสำเร็จ!");
 
             } catch (err) {
-                console.warn("ดึงข้อมูลล้มเหลว หรือรูปแบบผิด ใช้ข้อมูลจำลองแทน", err);
-                // ข้อมูลจำลองเมื่อเน็ตหลุดหรือมีปัญหา
+                console.error("การดึงข้อมูลจาก Sheets ล้มเหลว -> สลับไปใช้ค่าจำลอง:", err);
+                
+                // ระบบ Fallback ข้อมูลจำลองเมื่อเน็ตหลุดหรือข้อมูลผิดพลาด
                 currentCelsius = 28.5;
                 document.getElementById("hum").innerHTML = "💧 62.0%";
                 globalHistory = [
