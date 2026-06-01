@@ -183,3 +183,86 @@
     </script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Dashboard Pro</title>
+    <style>
+        /* กำหนดสีของแต่ละโหมด */
+        :root { --bg: #f1f5f9; --text: #0f172a; --card: #ffffff; }
+        .dark-mode { --bg: #0f172a; --text: #f8fafc; --card: #1e293b; }
+
+        body { 
+            background-color: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; transition: 0.5s; 
+            text-align: center; padding: 20px; margin: 0; 
+        }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+
+        /* อนิเมชันท้องฟ้า */
+        .sky-icon { width: 80px; height: 80px; border-radius: 50%; margin: 10px auto; transition: 0.5s; }
+        .sun { background: #fbbf24; box-shadow: 0 0 20px #fbbf24; animation: pulse 2s infinite; }
+        .moon { background: transparent; box-shadow: 15px 15px 0 0 #e2e8f0; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* นาฬิกา */
+        .clock { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: #38bdf8; }
+        
+        button { 
+            padding: 10px 20px; cursor: pointer; border-radius: 10px; border: none; 
+            background: #38bdf8; color: white; font-weight: bold; transition: 0.3s;
+        }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <div class="card">
+            <div id="sky" class="sky-icon sun"></div>
+            <div id="clock" class="clock">00:00:00</div>
+            <button id="toggle-theme">สลับโหมด สีขาว/ดำ</button>
+        </div>
+        
+        <div class="card">
+            <h1>ข้อมูลเซนเซอร์</h1>
+            <p>ยินดีต้อนรับสู่ระบบติดตามข้อมูลอัจฉริยะ</p>
+        </div>
+    </div>
+
+    <script>
+        // 1. จัดการเรื่องโหมดสี (Dark/Light)
+        const body = document.body;
+        const btn = document.getElementById('toggle-theme');
+        const savedTheme = localStorage.getItem('theme') || 'light-mode';
+        body.className = savedTheme;
+
+        btn.addEventListener('click', () => {
+            const isDark = body.classList.toggle('dark-mode');
+            body.classList.toggle('light-mode');
+            localStorage.setItem('theme', isDark ? 'dark-mode' : 'light-mode');
+        });
+
+        // 2. ฟังก์ชันนาฬิกา + อนิเมชันพระอาทิตย์/พระจันทร์
+        function updateDisplay() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+            
+            const hour = now.getHours();
+            const sky = document.getElementById('sky');
+            
+            // ช่วงเวลา 6:00 - 18:00 เป็นกลางวัน
+            if (hour >= 6 && hour < 18) {
+                sky.className = 'sky-icon sun';
+            } else {
+                sky.className = 'sky-icon moon';
+            }
+        }
+        setInterval(updateDisplay, 1000);
+        updateDisplay();
+    </script>
+</body>
+</html>
