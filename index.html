@@ -7,23 +7,23 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-           1. ตัวแปรสีและโครงสร้างพื้นหลัง (ทะเลกลางวัน / ป่าไม้กลางคืน)
+           1. ตัวแปรสีและโครงสร้างพื้นหลัง (ทะเล / ป่าไม้)
            ========================================================================== */
         :root {
-            --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
             --card-bg: rgba(255, 255, 255, 0.45);
             --text-color: #0f172a;
             --text-muted: #475569;
             --border-color: rgba(255, 255, 255, 0.6);
-            --astro-bg: rgba(255, 255, 255, 0.3);
+            --astro-bg: rgba(255, 255, 255, 0.4);
+            --icon-halo: rgba(255, 255, 255, 0.3);
         }
         body.dark-mode {
-            --bg-image: url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80');
-            --card-bg: rgba(15, 23, 42, 0.6);
+            --card-bg: rgba(15, 23, 42, 0.65);
             --text-color: #ffffff;
             --text-muted: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.15);
-            --astro-bg: rgba(0, 0, 0, 0.35);
+            --astro-bg: rgba(0, 0, 0, 0.4);
+            --icon-halo: rgba(0, 0, 0, 0.4);
         }
 
         body { 
@@ -33,31 +33,41 @@
             padding: 12px; 
             margin: 0;
             overflow-x: hidden;
-            transition: color 0.3s ease;
+            transition: color 0.4s ease;
             min-height: 100vh;
         }
 
-        /* 🌟 เอฟเฟกต์พื้นหลังขยับได้ (Cinematic Panning) */
-        body::before {
-            content: "";
+        /* 🌟 ระบบพื้นหลัง 2 เลเยอร์ ทำให้สลับโหมดได้ลื่นไหลสุดๆ และขยับแบบ 3D Panning */
+        .bg-layer {
             position: fixed;
-            top: -8%; left: -8%; right: -8%; bottom: -8%; 
-            background-image: var(--bg-image);
+            top: -10%; left: -10%; right: -10%; bottom: -10%; /* เผื่อพื้นที่ให้ขยับได้กว้างๆ */
             background-size: cover;
-            background-position: center center;
-            z-index: -1;
-            transition: background-image 0.5s ease-in-out;
-            animation: panBackground 25s infinite alternate ease-in-out;
+            background-position: center;
+            z-index: -2;
+            transition: opacity 0.8s ease-in-out; /* ระยะเวลาเฟดเปลี่ยนภาพ */
+            will-change: transform;
+            animation: panBackground 20s infinite alternate linear;
         }
+        .bg-ocean {
+            background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
+            opacity: 1; /* กลางวันโชว์ทะเล */
+        }
+        .bg-forest {
+            background-image: url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80');
+            opacity: 0; /* ซ่อนป่าไว้ก่อน */
+            z-index: -1;
+        }
+        body.dark-mode .bg-ocean { opacity: 0; }
+        body.dark-mode .bg-forest { opacity: 1; }
 
         @keyframes panBackground {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(3%, 2%) scale(1.06); }
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(3%, 3%); } /* ซูมและขยับทะแยงมุม */
         }
         
         .container { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; }
         
-        /* สไตล์การ์ดกระจกใส Glassmorphism */
+        /* สไตล์การ์ดกระจกใส */
         .card { 
             background: var(--card-bg);
             backdrop-filter: blur(25px);
@@ -65,45 +75,27 @@
             border: 1px solid var(--border-color);
             padding: 16px; 
             margin: 10px auto; 
-            border-radius: 20px; 
-            box-shadow: 0 6px 24px rgba(0,0,0,0.06); 
+            border-radius: 24px; 
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08); 
             box-sizing: border-box;
-            transition: background 0.3s ease, border 0.3s ease;
+            transition: background 0.4s ease, border 0.4s ease;
         }
         
-        .sensor-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .sensor-grid .card {
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 14px 10px;
-        }
+        .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .sensor-grid .card { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 14px 10px; }
         
         .value { font-size: 28px; font-weight: 800; color: #0284c7; margin: 6px 0; letter-spacing: -0.5px; }
         body.dark-mode .value { color: #38bdf8; }
+        .hum-value { color: #059669 !important; }
+        body.dark-mode .hum-value { color: #10b981 !important; }
         
-        .time-box { font-size: 2rem; font-weight: bold; padding: 2px; color: #0284c7; font-family: monospace; }
+        .time-box { font-size: 2.2rem; font-weight: bold; padding: 2px; color: #0284c7; font-family: monospace; }
         body.dark-mode .time-box { color: #38bdf8; }
         
         /* ==========================================================================
            2. ระบบปุ่มและสวิตช์
            ========================================================================== */
-        .controls-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-top: 12px; 
-            padding-top: 12px; 
-            border-top: 1px solid var(--border-color);
-        }
-
+        .controls-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); }
         .theme-switch-wrapper { display: flex; align-items: center; gap: 6px; }
         .theme-text { font-size: 12px; font-weight: bold; }
         .theme-switch { position: relative; display: inline-block; width: 42px; height: 22px; flex-shrink: 0; }
@@ -113,88 +105,74 @@
         input:checked + .slider { background-color: #0f172a; }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        .unit-btn {
-            background: #38bdf8;
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            font-size: 12px;
-            font-weight: bold;
-            border-radius: 15px;
-            cursor: pointer;
-        }
+        .unit-btn { background: #38bdf8; color: white; border: none; padding: 5px 12px; font-size: 12px; font-weight: bold; border-radius: 15px; cursor: pointer; }
 
         /* ==========================================================================
-           3. ส่วนดาราศาสตร์ (แก้ไขปัญหาดวงจันทร์ซ้อนขอบแบบ 100%)
+           3. ส่วนดาราศาสตร์ (ขยายใหญ่ขึ้น, เพิ่มออร่า, และลดขนาดกล่องข้อความ)
            ========================================================================== */
         .astro-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 12px; 
-            margin-bottom: 8px;
+            display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 12px; 
         }
         
-        /* กล่องเก็บไอคอน ป้องกันการหลุดล้นขอบ */
+        /* รองพื้นโปร่งแสงให้ไอคอน เพื่อไม่ให้กลืนกับสีขาวหรือสีดำ */
         .icon-box {
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 70px; height: 70px; 
+            border-radius: 50%;
+            background: var(--icon-halo);
+            display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
-            position: relative;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
         }
 
+        /* พระอาทิตย์ใหญ่ขึ้น และมี Glow สว่างจ้า */
         .sun { 
-            width: 32px; 
-            height: 32px; 
+            width: 48px; height: 48px; 
             border-radius: 50%; 
             background: #fbbf24; 
-            box-shadow: 0 0 15px #fbbf24; 
-            animation: sunPulse 2s infinite ease-in-out; 
+            box-shadow: 0 0 25px 8px rgba(251, 191, 36, 0.7); 
+            animation: sunPulse 2s infinite alternate ease-in-out; 
         }
-        @keyframes sunPulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes sunPulse { 0% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.6); } 100% { transform: scale(1.08); box-shadow: 0 0 35px 12px rgba(251, 191, 36, 0.9); } }
         
-        /* 🛠 แก้ไขดีไซน์พระจันทร์ใหม่: ใช้ Pseudo-element สร้างขอบเว้า วางเซนเตอร์ ไม่ล้นการ์ดแน่นอน */
+        /* พระจันทร์ใหญ่ขึ้น เป็นสีขาวนวล และมี Glow เรืองแสง */
         .moon { 
-            width: 30px; 
-            height: 30px; 
+            width: 45px; height: 45px; 
             border-radius: 50%; 
-            box-shadow: 8px 8px 0 0 #e2e8f0; 
-            transform: rotate(-20px) translate(-4px, -4px);
-            filter: drop-shadow(0 0 4px rgba(226, 232, 240, 0.5));
+            background: transparent; 
+            box-shadow: 15px 15px 0 0 #f8fafc; 
+            transform: rotate(-15deg) translate(-6px, -6px);
+            filter: drop-shadow(0 0 8px rgba(248, 250, 252, 0.8)); /* แสงเรืองรอง */
             animation: moonPulse 3s infinite alternate ease-in-out;
         }
         @keyframes moonPulse { 0% { transform: rotate(-20deg) scale(1); } 100% { transform: rotate(-10deg) scale(1.05); } }
 
+        /* กล่องข้อความฟิตพอดีตัวหนังสือ */
         .astro-info { 
             background: var(--astro-bg); 
-            padding: 8px 12px; 
+            padding: 6px 14px; 
             border-radius: 12px; 
             text-align: left; 
             font-size: 11px; 
             color: var(--text-muted); 
             line-height: 1.4; 
             border: 1px solid var(--border-color); 
-            flex-grow: 1;
-            transition: background 0.3s ease;
+            width: max-content; /* ปรับขนาดให้พอดีคำ */
+            transition: background 0.4s ease;
         }
-
-        .log-btn { padding: 10px; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .log-on { background: #10b981; color: white; }
-        .log-off { background: #ef4444; color: white; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 8px; width: 100%; border-top: 1px dashed var(--border-color); padding-top: 6px;}
         .stat-box { font-size: 11px; font-weight: 600; }
         .stat-label { color: var(--text-muted); font-size: 9px; font-weight: bold; }
         
-        .chart-container { position: relative; width: 100%; height: 160px; }
-        h2.main-title { font-size: 20px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.6); margin: 15px 0 2px 0; }
-        p.sub-title { color: #f1f5f9; text-shadow: 0 1px 4px rgba(0,0,0,0.5); margin: 0 0 10px 0; font-size: 12px; font-weight: 600; }
+        .chart-container { position: relative; width: 100%; height: 140px; margin-top: 5px; }
+        h2.main-title { font-size: 22px; color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,0.6); margin: 15px 0 2px 0; }
+        p.sub-title { color: #f1f5f9; text-shadow: 0 1px 6px rgba(0,0,0,0.5); margin: 0 0 12px 0; font-size: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
+    <div class="bg-layer bg-ocean"></div>
+    <div class="bg-layer bg-forest"></div>
+
     <div class="container">
         <div class="card">
             <div class="astro-container">
@@ -221,10 +199,6 @@
         <h2 class="main-title">🌍 Smart Environment</h2>
         <p class="sub-title">Environmental Monitoring System</p>
 
-        <div class="card" style="padding: 12px;">
-            <button id="log-btn" class="log-btn log-on" onclick="toggleLogging()">🟢 Cloud Logging : Active</button>
-        </div>
-
         <div class="sensor-grid">
             <div class="card">
                 <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Temperature</span>
@@ -237,15 +211,22 @@
             </div>
             <div class="card">
                 <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Humidity</span>
-                <div id="hum" class="value" style="color: #10b981; margin-top: 15px;">💧 --%</div>
+                <div id="hum" class="value hum-value" style="margin-top: 15px;">💧 --%</div>
                 <span style="font-size: 10px; color: var(--text-muted); margin-top: auto; padding-top: 10px;">DHT22 Sensor</span>
             </div>
         </div>
 
         <div class="card">
-            <span style="margin-top:0; font-size:12px; font-weight: bold; color: var(--text-muted); display:block; margin-bottom:5px;">Temperature History</span>
+            <span style="font-size:12px; font-weight: bold; color: var(--text-muted); display:block;">Temperature History</span>
             <div class="chart-container">
                 <canvas id="tempChart"></canvas>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 15px 0 10px 0;">
+            
+            <span style="font-size:12px; font-weight: bold; color: var(--text-muted); display:block;">Humidity History</span>
+            <div class="chart-container">
+                <canvas id="humChart"></canvas>
             </div>
         </div>
     </div>
@@ -266,7 +247,7 @@
             themeText.innerText = 'Dark Mode';
         }
 
-        // 🛠 อัปเกรด: ฟังก์ชันสลับโหมดควบคุมทุกอย่างทันที (ฉากหลัง + ไอคอนดาราศาสตร์)
+        // ฟังก์ชันอัปเดตไอคอนดาราศาสตร์
         function applyThemeElements() {
             const isDark = document.body.classList.contains('dark-mode');
             const skyIcon = document.getElementById('sky-icon');
@@ -301,7 +282,7 @@
         function toggleUnit() {
             currentUnit = (currentUnit === "C") ? "F" : "C";
             document.getElementById("unit-btn").innerText = `สลับหน่วย (°${currentUnit === "C" ? "F" : "C"})`;
-            renderTemperatureData();
+            renderChartsData();
         }
 
         function updateClock() {
@@ -310,79 +291,71 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
-        applyThemeElements(); // รันครั้งแรกเพื่อเซ็ตไอคอนให้ถูกโหมด
-
-        let isLogging = true;
-        function toggleLogging() {
-            isLogging = !isLogging;
-            const btn = document.getElementById('log-btn');
-            if (isLogging) {
-                btn.className = "log-btn log-on";
-                btn.innerText = "🟢 Cloud Logging : Active";
-            } else {
-                btn.className = "log-btn log-off";
-                btn.innerText = "🔴 Cloud Logging : Paused";
-            }
-        }
+        applyThemeElements(); 
 
         // ==========================================================================
-        // ระบบกราฟประวัติและการดึงข้อมูล
+        // ระบบกราฟประวัติและการดึงข้อมูล (เพิ่มกราฟความชื้น)
         // ==========================================================================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmyqY3xDRfgR6jgtX-xoFAGkzY76CkmgyEOI2NOsh_hgepxMK3V53_ybua-Z4_kEBm/exec";
 
         const labels = [];
         const tempData = [];
+        const humData = []; // ข้อมูลสำหรับกราฟความชื้น
+
+        // 1. กราฟอุณหภูมิ (สีฟ้า)
         const tempChart = new Chart(document.getElementById('tempChart'), {
             type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1
-                }]
-            },
-            options: { 
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, 
-                    y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } 
-                },
-                plugins: { legend: { display: false } }
-            }
+            data: { labels: labels, datasets: [{ label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } }, plugins: { legend: { display: false } } }
         });
 
+        // 2. กราฟความชื้น (สีเขียว)
+        const humChart = new Chart(document.getElementById('humChart'), {
+            type: 'line',
+            data: { labels: labels, datasets: [{ label: 'Humidity', data: humData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } }, plugins: { legend: { display: false } } }
+        });
+
+        // อัปเดตสีเส้นกริดตอนสลับโหมดไร้รอยต่อ
         function updateChartTheme() {
             if (!tempChart || !tempChart.options) return;
             const isDark = document.body.classList.contains('dark-mode');
             const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
             const textColor = isDark ? '#94a3b8' : '#475569';
             
-            if (tempChart.options.scales && tempChart.options.scales.y) {
-                tempChart.options.scales.y.grid.color = gridColor;
-                tempChart.options.scales.x.ticks.color = textColor;
-                tempChart.options.scales.y.ticks.color = textColor;
-                tempChart.update({ duration: 0 });
-            }
+            [tempChart, humChart].forEach(chart => {
+                if (chart.options.scales && chart.options.scales.y) {
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.update({ duration: 0 });
+                }
+            });
         }
 
-        function renderTemperatureData() {
+        // ยัดข้อมูลลงหน้าจอและกราฟทั้งคู่
+        function renderChartsData() {
             if (!globalHistory || globalHistory.length === 0) return;
 
             let displayTemp = (currentUnit === "C") ? currentCelsius : cToF(currentCelsius);
             document.getElementById("temp").innerHTML = `🌡 ${displayTemp.toFixed(1)}°${currentUnit}`;
 
-            labels.length = 0; tempData.length = 0;
+            labels.length = 0; tempData.length = 0; humData.length = 0;
             let totalTemp = 0; let maxTemp = -999; let minTemp = 999;
 
             globalHistory.forEach(item => {
                 labels.push(item.time);
+                
+                // ข้อมูลอุณหภูมิ
                 let tCelsius = parseFloat(item.temp);
                 let tDisplay = (currentUnit === "C") ? tCelsius : cToF(tCelsius);
-                
                 tempData.push(tDisplay);
                 totalTemp += tDisplay;
                 if (tDisplay > maxTemp) maxTemp = tDisplay;
                 if (tDisplay < minTemp) minTemp = tDisplay;
+
+                // ข้อมูลความชื้น
+                humData.push(parseFloat(item.hum));
             });
 
             document.getElementById("t-max").innerText = `${maxTemp.toFixed(0)}°`;
@@ -390,6 +363,7 @@
             document.getElementById("t-avg").innerText = `${(totalTemp / globalHistory.length).toFixed(0)}°`;
 
             tempChart.update();
+            humChart.update();
             updateChartTheme(); 
         }
 
@@ -404,7 +378,7 @@
                 const curHum = parseFloat(data.current.hum);
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
 
-                renderTemperatureData();
+                renderChartsData();
             } catch (err) {
                 console.log("Connection Failed");
             }
