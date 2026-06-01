@@ -2,73 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Smart Environment Dashboard Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-           1. กำหนดตัวแปรธีมสี และภาพพื้นหลังแบบโมเดิร์น
+           1. กำหนดตัวแปรธีมสี และภาพพื้นหลังระบบ Responsive สำหรับมือถือ
            ========================================================================== */
         :root {
-            /* ภาพทะเลสไตล์โมเดิร์น (Light Mode) */
-            --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');
-            --card-bg: rgba(255, 255, 255, 0.75);
+            --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80');
+            --card-bg: rgba(255, 255, 255, 0.7);
             --text-color: #0f172a;
             --text-muted: #475569;
-            --border-color: rgba(255, 255, 255, 0.5);
-            --chart-grid: rgba(0, 0, 0, 0.1);
-            --astro-bg: rgba(0, 0, 0, 0.05);
+            --border-color: rgba(255, 255, 255, 0.4);
+            --chart-grid: rgba(0, 0, 0, 0.08);
+            --astro-bg: rgba(0, 0, 0, 0.04);
         }
         .dark-mode {
-            /* ภาพป่ากลางคืนสไตล์ดาร์ก (Dark Mode) */
-            --bg-image: url('https://images.unsplash.com/photo-1503756234508-e32369269deb?auto=format&fit=crop&w=1920&q=80');
-            --card-bg: rgba(30, 41, 59, 0.85);
+            --bg-image: url('https://images.unsplash.com/photo-1503756234508-e32369269deb?auto=format&fit=crop&w=1000&q=80');
+            --card-bg: rgba(30, 41, 59, 0.8);
             --text-color: #ffffff;
             --text-muted: #cbd5e1;
             --border-color: rgba(255, 255, 255, 0.1);
             --chart-grid: rgba(255, 255, 255, 0.1);
-            --astro-bg: rgba(255, 255, 255, 0.05);
+            --astro-bg: rgba(255, 255, 255, 0.06);
         }
 
+        /* เทคนิคพิเศษแก้ปัญหาภาพพื้นหลังบนมือถือไม่ขยับ/ภาพแตก */
         body { 
+            color: var(--text-color); 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            text-align: center; 
+            padding: 15px; 
+            margin: 0;
+            transition: color 0.5s;
+            min-height: 100vh;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
             background-image: var(--bg-image);
             background-size: cover;
-            background-position: center 0px; /* สำหรับทำ Parallax */
-            background-attachment: fixed; /* ล็อกภาพให้เลื่อนตามแบบเนียนๆ */
-            color: var(--text-color); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            padding: 20px; 
-            margin: 0;
-            transition: background-image 0.8s ease-in-out, color 0.5s;
+            background-position: center 0px;
+            z-index: -1;
+            transition: background-image 0.8s ease-in-out;
+            will-change: transform;
         }
         
-        .container { max-width: 600px; margin: 0 auto; }
+        .container { max-width: 500px; margin: 0 auto; }
         
-        /* สไตล์การ์ดแสดงผลแบบ Glassmorphism (กระจกใส) */
+        /* สไตล์การ์ด Glassmorphism ปรับความกว้างให้พอดีกับหน้าจอมือถือ */
         .card { 
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--border-color);
             padding: 20px; 
-            margin: 15px auto; 
-            border-radius: 20px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
-            transition: background 0.5s, transform 0.2s;
-            overflow: hidden;
+            margin: 12px auto; 
+            border-radius: 24px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12); 
+            transition: background 0.5s;
+            box-sizing: border-box;
         }
         
-        .value { font-size: 46px; font-weight: bold; color: #38bdf8; }
-        .status { font-size: 16px; font-weight: bold; }
-        .time-box { font-size: 2.5rem; font-weight: bold; padding: 10px; margin: 5px 0; color: #38bdf8; font-family: monospace; }
+        .value { font-size: 40px; font-weight: bold; color: #38bdf8; margin: 5px 0; }
+        .time-box { font-size: 2.2rem; font-weight: bold; padding: 5px; color: #38bdf8; font-family: monospace; }
         
         /* ==========================================================================
-           2. ส่วนควบคุมสวิตช์และปุ่มกดต่างๆ
+           2. ส่วนควบคุมสวิตช์และปุ่มกด (Responsive Flexbox)
            ========================================================================== */
         .controls-row { 
             display: flex; 
-            justify-content: space-around; 
+            justify-content: space-between; 
             align-items: center; 
             margin-top: 15px; 
             padding-top: 15px; 
@@ -76,58 +82,75 @@
             gap: 10px;
         }
 
-        /* Toggle Switch สำหรับสลับธีม */
         .theme-switch-wrapper { display: flex; align-items: center; gap: 8px; }
-        .theme-text { font-size: 14px; font-weight: bold; color: var(--text-color); }
-        .theme-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .theme-text { font-size: 13px; font-weight: bold; }
+        .theme-switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; }
         .theme-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #38bdf8; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #0f172a; }
-        input:checked + .slider:before { transform: translateX(24px); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
-        /* ปุ่มสลับหน่วยองศา °C / °F */
         .unit-btn {
             background: #38bdf8;
             color: white;
             border: none;
-            padding: 6px 16px;
-            font-size: 14px;
+            padding: 6px 14px;
+            font-size: 13px;
             font-weight: bold;
             border-radius: 20px;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .unit-btn:hover { transform: scale(1.05); background: #0284c7; }
 
         /* ==========================================================================
-           3. อนิเมชันสภาพแวดล้อม และ ข้อมูลดาราศาสตร์ย่อ
+           3. ข้อมูลดาราศาสตร์ ยุบแถวอัตโนมัติบนมือถือที่จอแคบมาก
            ========================================================================== */
-        .astro-container { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 15px; }
-        .sky-icon { width: 60px; height: 60px; border-radius: 50%; transition: 0.5s; flex-shrink: 0; }
+        .astro-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 10px;
+            flex-wrap: wrap; /* ถ้าน้าจอมือถือแคบเกินไป จะสลับไอคอนลงมาด้านบนข้อความอัตโนมัติ */
+        }
+        .sky-icon { width: 55px; height: 55px; border-radius: 50%; transition: 0.5s; flex-shrink: 0; }
         
-        .sun { background: #fbbf24; box-shadow: 0 0 25px #fbbf24; animation: sunPulse 2s infinite ease-in-out; }
-        @keyframes sunPulse { 0% { transform: scale(1); box-shadow: 0 0 15px #fbbf24; } 50% { transform: scale(1.08); box-shadow: 0 0 30px #f59e0b; } 100% { transform: scale(1); box-shadow: 0 0 15px #fbbf24; } }
+        .sun { background: #fbbf24; box-shadow: 0 0 20px #fbbf24; animation: sunPulse 2s infinite ease-in-out; }
+        @keyframes sunPulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
         
-        .moon { background: transparent; box-shadow: 16px 16px 0 0 #e2e8f0; transform: rotate(-15deg); margin-left: -16px; margin-top: -16px; animation: moonFloat 3s infinite ease-in-out; }
-        @keyframes moonFloat { 0% { transform: translateY(0) rotate(-15deg); } 50% { transform: translateY(-5px) rotate(-10deg); } 100% { transform: translateY(0) rotate(-15deg); } }
+        .moon { background: transparent; box-shadow: 14px 14px 0 0 #e2e8f0; transform: rotate(-15deg); margin-left: -14px; margin-top: -14px; animation: moonFloat 3s infinite ease-in-out; }
+        @keyframes moonFloat { 0% { transform: translateY(0) rotate(-15deg); } 50% { transform: translateY(-4px) rotate(-10deg); } 100% { transform: translateY(0) rotate(-15deg); } }
 
-        /* กล่องข้อความดาราศาสตร์ */
-        .astro-info { background: var(--astro-bg); padding: 10px 15px; border-radius: 12px; text-align: left; font-size: 13px; color: var(--text-muted); line-height: 1.5; border: 1px solid var(--border-color); width: 220px; }
-        .astro-info strong { color: var(--text-color); font-size: 14px; }
+        .astro-info { 
+            background: var(--astro-bg); 
+            padding: 10px; 
+            border-radius: 14px; 
+            text-align: left; 
+            font-size: 12px; 
+            color: var(--text-muted); 
+            line-height: 1.5; 
+            border: 1px solid var(--border-color); 
+            width: 100%;
+            max-width: 240px;
+            box-sizing: border-box;
+        }
+        .astro-info strong { color: var(--text-color); font-size: 13px; }
 
         /* ==========================================================================
-           4. สไตล์ปุ่ม Data Logging
+           4. ปุ่ม Data Logging & ส่วนโครงสร้างข้อมูลตาราง
            ========================================================================== */
-        .log-btn { padding: 10px 25px; font-size: 16px; font-weight: bold; border-radius: 50px; border: none; cursor: pointer; transition: 0.3s; margin-top: 10px; width: 100%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .log-btn { padding: 12px; font-size: 15px; font-weight: bold; border-radius: 50px; border: none; cursor: pointer; transition: 0.3s; margin-top: 5px; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .log-on { background: #10b981; color: white; }
         .log-off { background: #ef4444; color: white; }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat-box { background: rgba(128,128,128,0.1); padding: 8px; border-radius: 10px; font-size: 14px; }
-        .stat-label { color: var(--text-muted); font-size: 12px; }
-        canvas { background: transparent; padding: 10px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .stat-box { background: rgba(128,128,128,0.08); padding: 8px 4px; border-radius: 12px; font-size: 13px; }
+        .stat-label { color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
+        
+        /* จัดขนาดกราฟไม่ให้ล้นหรือเพี้ยนบนมือถือ */
+        .chart-container { position: relative; width: 100%; height: auto; }
     </style>
 </head>
 <body>
@@ -135,8 +158,7 @@
         <div class="card">
             <div class="astro-container">
                 <div id="sky-icon" class="sky-icon sun"></div>
-                <div id="astro-info" class="astro-info">
-                    </div>
+                <div id="astro-info" class="astro-info"></div>
             </div>
             
             <div id="clock" class="time-box">00:00:00</div>
@@ -153,17 +175,17 @@
             </div>
         </div>
 
-        <h1 style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🌍 Smart Environment</h1>
-        <p style="color: var(--text-muted); margin-top: 0; font-weight: bold;">Environmental Monitoring System</p>
+        <h2 style="text-shadow: 0 2px 4px rgba(0,0,0,0.15); margin: 15px 0 2px 0; font-size: 24px;">🌍 Smart Environment</h2>
+        <p style="color: var(--text-muted); margin: 0 0 15px 0; font-size: 13px; font-weight: bold;">Environmental Monitoring System</p>
 
         <div class="card">
-            <h2 style="margin:0 0 5px 0; font-size:18px;">Cloud Data Logging</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 10px 0;">ควบคุมการส่งข้อมูลไปยัง Google Sheets</p>
+            <h3 style="margin:0 0 3px 0; font-size:16px;">Cloud Data Logging</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 10px 0;">ควบคุมการส่งข้อมูลไปยัง Google Sheets</p>
             <button id="log-btn" class="log-btn log-on" onclick="toggleLogging()">🟢 กำลังบันทึกข้อมูล</button>
         </div>
 
-        <div id="temp-card" class="card">
-            <h2 style="margin:0; font-size:18px;">Temperature</h2>
+        <div class="card">
+            <h3 style="margin:0; font-size:16px;">Temperature</h3>
             <div id="temp" class="value">🌡 -- °C</div>
             <div class="stats-grid">
                 <div class="stat-box"><div class="stat-label">MIN</div><span id="t-min">--</span></div>
@@ -173,28 +195,30 @@
         </div>
 
         <div class="card">
-            <h2 style="margin:0; font-size:18px;">Humidity</h2>
+            <h3 style="margin:0; font-size:16px;">Humidity</h3>
             <div id="hum" class="value" style="color: #10b981;">💧 -- %</div>
         </div>
 
         <div class="card">
-            <h3 style="margin-top:0; font-size:16px; color: var(--text-muted);">Temperature History</h3>
-            <canvas id="tempChart"></canvas>
+            <h4 style="margin-top:0; font-size:14px; color: var(--text-muted);">Temperature History</h4>
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
         </div>
     </div>
 
     <script>
-        // ข้อมูล Global สำหรับเก็บค่าอุณหภูมิดิบ (หน่วยเซลเซียส) เพื่อใช้แปลงสลับหน่วย
         let currentCelsius = 0;
         let globalHistory = [];
-        let currentUnit = "C"; // C = เซลเซียส, F = ฟาเรนไฮต์
+        let currentUnit = "C";
 
         // ==========================================================================
-        // 1. ระบบ Parallax Background (เลื่อนพื้นหลังตอนไถจอ)
+        // 1. ระบบ Parallax Background (แก้ปัญหาสำหรับ Mobile โดยเฉพาะ)
         // ==========================================================================
         window.addEventListener('scroll', () => {
             const scrollPos = window.scrollY;
-            document.body.style.backgroundPositionY = `${-(scrollPos * 0.3)}px`;
+            // ใช้คำสั่งนี้ปรับเลเยอร์แยกพิเศษ ภาพพื้นหลังจะเลื่อนตามได้นุ่มนวลทุกหน้าจอ
+            document.styleSheets[0].cssRules[2].style.transform = `translateY(${scrollPos * 0.25}px)`;
         });
 
         // ==========================================================================
@@ -229,17 +253,13 @@
         toggleSwitch.addEventListener('change', switchTheme, false);
 
         // ==========================================================================
-        // 3. ฟังก์ชันแปลงหน่วยอุณหภูมิ และสลับหน่วย (°C / °F)
+        // 3. ฟังก์ชันสลับหน่วยองศา (°C / °F)
         // ==========================================================================
-        function cToF(celsius) {
-            return (celsius * 9/5) + 32;
-        }
+        function cToF(celsius) { return (celsius * 9/5) + 32; }
 
         function toggleUnit() {
             currentUnit = (currentUnit === "C") ? "F" : "C";
             document.getElementById("unit-btn").innerText = `สลับหน่วย (°${currentUnit === "C" ? "F" : "C"})`;
-            
-            // อัปเดตการแสดงผลหน้าจอใหม่ทันทีโดยไม่ต้องรอโหลดข้อมูลรอบถัดไป
             renderTemperatureData();
         }
 
@@ -303,19 +323,20 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.2)', borderWidth: 3, tension: 0.3, fill: true
+                    label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', borderWidth: 2.5, tension: 0.3, fill: true, pointRadius: 2
                 }]
             },
             options: { 
                 responsive: true,
-                scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(128,128,128,0.1)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(128,128,128,0.1)' } } },
-                plugins: { legend: { labels: { color: '#94a3b8' } } }
+                maintainAspectRatio: false, // บังคับให้สัดส่วนกราฟยืดหยุ่นได้ดีบนมือถือ
+                scales: { x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(128,128,128,0.08)' } }, y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(128,128,128,0.08)' } } },
+                plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } }
             }
         });
 
         function updateChartTheme() {
             const isDark = document.body.classList.contains('dark-mode');
-            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
             const textColor = isDark ? '#cbd5e1' : '#475569';
             
             tempChart.options.scales.x.grid.color = gridColor;
@@ -325,22 +346,15 @@
             tempChart.options.plugins.legend.labels.color = textColor;
             tempChart.update();
         }
-        updateChartTheme();
 
-        // ฟังก์ชันประมวลผลคำนวณและแสดงผลค่าอุณหภูมิตามหน่วยที่ถูกเลือก
         function renderTemperatureData() {
             if (!globalHistory || globalHistory.length === 0) return;
 
-            // 1. อัปเดตส่วนอุณหภูมิปัจจุบัน
             let displayTemp = (currentUnit === "C") ? currentCelsius : cToF(currentCelsius);
             document.getElementById("temp").innerHTML = `🌡 ${displayTemp.toFixed(1)} °${currentUnit}`;
 
-            // 2. คำนวณและอัปเดตส่วน MIN / AVG / MAX และจัดข้อมูลลงกราฟ
-            labels.length = 0; 
-            tempData.length = 0;
-            let totalTemp = 0; 
-            let maxTemp = -999; 
-            let minTemp = 999;
+            labels.length = 0; tempData.length = 0;
+            let totalTemp = 0; let maxTemp = -999; let minTemp = 999;
 
             globalHistory.forEach(item => {
                 labels.push(item.time);
@@ -357,7 +371,6 @@
             document.getElementById("t-min").innerText = `${minTemp.toFixed(1)}°${currentUnit}`;
             document.getElementById("t-avg").innerText = `${(totalTemp / globalHistory.length).toFixed(1)}°${currentUnit}`;
 
-            // อัปเดตป้ายชื่อบนหัวกราฟตามหน่วยที่เลือก
             tempChart.data.datasets[0].label = `Temp (°${currentUnit})`;
             tempChart.update();
         }
@@ -367,15 +380,12 @@
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
 
-                // บันทึกค่าที่ได้ลงในตัวแปร Global
                 currentCelsius = parseFloat(data.current.temp);
                 globalHistory = data.history;
 
-                // อัปเดตค่าความชื้น (ไม่ต้องแปลงหน่วย)
                 const curHum = parseFloat(data.current.hum);
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + " %";
 
-                // เรียกฟังก์ชันประมวลผลอุณหภูมิ
                 renderTemperatureData();
             } catch (err) {
                 console.log("Connection Failed");
