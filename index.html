@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,107 +7,127 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-           1. กำหนดตัวแปรธีมสี (Light / Dark Mode ตามที่คุณส่งตัวอย่างมา)
+           1. กำหนดตัวแปรธีมสี และภาพพื้นหลังแบบโมเดิร์น
            ========================================================================== */
         :root {
-            --bg-color: #f1f5f9;
-            --card-bg: #ffffff;
+            /* ภาพทะเลสไตล์โมเดิร์น (Light Mode) */
+            --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');
+            --card-bg: rgba(255, 255, 255, 0.75); /* โปร่งแสง */
             --text-color: #0f172a;
-            --text-muted: #64748b;
-            --border-clock: #cbd5e1;
+            --text-muted: #475569;
+            --border-color: rgba(255, 255, 255, 0.5);
+            --chart-grid: rgba(0, 0, 0, 0.1);
         }
         .dark-mode {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            /* ภาพป่ากลางคืนสไตล์ดาร์ก (Dark Mode) */
+            --bg-image: url('https://images.unsplash.com/photo-1503756234508-e32369269deb?auto=format&fit=crop&w=1920&q=80');
+            --card-bg: rgba(30, 41, 59, 0.85); /* โปร่งแสง */
             --text-color: #ffffff;
-            --text-muted: #94a3b8;
-            --border-clock: #38bdf8;
+            --text-muted: #cbd5e1;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --chart-grid: rgba(255, 255, 255, 0.1);
         }
 
         body { 
-            background: var(--bg-color); 
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: var(--text-color); 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             text-align: center; 
             padding: 20px; 
             margin: 0;
-            transition: background 0.5s, color 0.5s; /* อนิเมชันเปลี่ยนสีนุ่มนวล */
+            transition: background-image 0.8s ease-in-out, color 0.5s;
         }
+        
         .container { max-width: 600px; margin: 0 auto; }
         
-        /* สไตล์การ์ดแสดงผล */
+        /* สไตล์การ์ดแสดงผลแบบ Glassmorphism (กระจกใส) */
         .card { 
-            background: var(--card-bg); 
+            background: var(--card-bg);
+            backdrop-filter: blur(12px); /* เบลอพื้นหลังด้านหลังการ์ด */
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
             padding: 20px; 
             margin: 15px auto; 
             border-radius: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
             transition: background 0.5s, transform 0.2s;
-            position: relative;
             overflow: hidden;
         }
-        .card:hover { transform: translateY(-2px); }
+        .card:hover { transform: translateY(-3px); }
         
         .value { font-size: 46px; font-weight: bold; color: #38bdf8; }
         .status { font-size: 16px; font-weight: bold; }
-        
-        /* สไตล์ปุ่มกดสลับโหมด */
-        button { 
-            padding: 10px 20px; 
-            font-size: 14px; 
-            font-weight: bold;
-            border-radius: 10px; 
-            border: none; 
-            cursor: pointer; 
-            margin: 5px;
-            background: #38bdf8; 
-            color: white;
-            transition: 0.3s;
-            box-shadow: 0 4px 6px rgba(56, 189, 248, 0.2);
-        }
-        button:hover { opacity: 0.9; transform: scale(1.02); }
-        
-        /* สไตล์กล่องนาฬิกา */
-        .time-box { 
-            font-size: 2.5rem; 
-            font-weight: bold; 
-            padding: 10px; 
-            margin: 10px 0;
-            color: #38bdf8;
-            font-family: monospace;
-        }
+        .time-box { font-size: 2.5rem; font-weight: bold; padding: 10px; margin: 10px 0; color: #38bdf8; font-family: monospace; }
         
         /* ==========================================================================
-           2. อนิเมชันสภาพแวดล้อม ท้องฟ้า/ดวงอาทิตย์/ดวงจันทร์เสี้ยว
+           2. Toggle Switch แบบเลื่อนซ้าย-ขวา (ดีไซน์ทันสมัย)
            ========================================================================== */
-        .sky-container {
+        .theme-switch-wrapper {
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 90px;
-            margin-bottom: 5px;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
         }
+        .theme-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-color);
+            min-width: 90px;
+        }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #38bdf8;
+            transition: .4s;
+            border-radius: 34px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        input:checked + .slider { background-color: #0f172a; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* ==========================================================================
+           3. อนิเมชันสภาพแวดล้อม ท้องฟ้า/ดวงอาทิตย์/ดวงจันทร์เสี้ยว
+           ========================================================================== */
+        .sky-container { display: flex; justify-content: center; align-items: center; height: 90px; margin-bottom: 5px; }
         .sky-icon { width: 70px; height: 70px; border-radius: 50%; transition: 0.5s; }
         
-        /* อนิเมชันพระอาทิตย์เวลากลางวัน (มีแสงกระพริบ Pulse ลื่นไหล) */
-        .sun { 
-            background: #fbbf24; 
-            box-shadow: 0 0 25px #fbbf24; 
-            animation: sunPulse 2s infinite ease-in-out; 
-        }
+        .sun { background: #fbbf24; box-shadow: 0 0 25px #fbbf24; animation: sunPulse 2s infinite ease-in-out; }
         @keyframes sunPulse {
             0% { transform: scale(1); box-shadow: 0 0 15px #fbbf24; }
             50% { transform: scale(1.08); box-shadow: 0 0 30px #f59e0b; }
             100% { transform: scale(1); box-shadow: 0 0 15px #fbbf24; }
         }
         
-        /* อนิเมชันดวงจันทร์เสี้ยวเวลากลางคืน (ใช้ shadow วาดเป็นวงพระจันทร์โค้งสวยงาม) */
         .moon { 
             background: transparent; 
             box-shadow: 18px 18px 0 0 #e2e8f0; 
-            transform: rotate(-15px);
-            margin-left: -18px; /* ปรับตำแหน่งชดเชยเงา */
-            margin-top: -18px;
+            transform: rotate(-15deg);
+            margin-left: -18px; margin-top: -18px;
             animation: moonFloat 3s infinite ease-in-out;
         }
         @keyframes moonFloat {
@@ -116,45 +136,41 @@
             100% { transform: translateY(0) rotate(-15deg); }
         }
 
-        /* โซนสถิติสรุปค่า */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat-box { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 10px; font-size: 14px; }
+        .stat-box { background: rgba(128,128,128,0.1); padding: 8px; border-radius: 10px; font-size: 14px; }
         .stat-label { color: var(--text-muted); font-size: 12px; }
 
-        /* การ์ดเตือนภัยสีแดงเมื่อร้อนเกิน 35°C */
-        .danger-alert {
-            background: #ef4444 !important;
-            animation: alertPulse 2s infinite;
-        }
-        .danger-alert .value, .danger-alert h2 { color: white !important; }
-        @keyframes alertPulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        canvas { background: white; border-radius: 15px; padding: 10px; }
+        canvas { background: transparent; padding: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="card" style="border: 2px solid var(--border-clock);">
+        <div class="card">
             <div class="sky-container">
                 <div id="sky-icon" class="sky-icon sun"></div>
             </div>
+            <div id="clock" class="time-box">00:00:00</div>
             
+            <div class="theme-switch-wrapper">
+                <span id="theme-text" class="theme-text">Light Mode</span>
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider"></div>
+                </label>
+            </div>
+        </div>
 
-        <h1>🌍 Smart Environment</h1>
-        <p style="color: var(--text-muted); margin-top: 0;">ระบบติดตามสภาพแวดล้อมอัจฉริยะ</p>
+        <h1 style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🌍 Smart Environment</h1>
+        <p style="color: var(--text-muted); margin-top: 0; font-weight: bold;">Environmental Monitoring System</p>
 
         <div id="temp-card" class="card">
             <h2 style="margin:0; font-size:18px;">Temperature</h2>
             <div id="temp" class="value">🌡 -- °C</div>
             
             <div class="stats-grid">
-                <div class="stat-box"><div class="stat-label">ต่ำสุด</div><span id="t-min">--</span></div>
-                <div class="stat-box"><div class="stat-label">เฉลี่ย</div><span id="t-avg">--</span></div>
-                <div class="stat-box"><div class="stat-label">สูงสุด</div><span id="t-max">--</span></div>
+                <div class="stat-box"><div class="stat-label">MIN</div><span id="t-min">--</span></div>
+                <div class="stat-box"><div class="stat-label">AVG</div><span id="t-avg">--</span></div>
+                <div class="stat-box"><div class="stat-label">MAX</div><span id="t-max">--</span></div>
             </div>
         </div>
 
@@ -164,64 +180,74 @@
         </div>
 
         <div class="card" style="padding: 12px;">
-            <div id="status" class="status">⏳ กำลังดึงข้อมูลประวัติจากระบบ Cloud...</div>
+            <div id="status" class="status">⏳ Connecting to Cloud...</div>
         </div>
 
         <div class="card">
-            <h3 style="margin-top:0; font-size:16px; color: var(--text-muted);">กราฟแสดงแนวโน้มอุณหภูมิย้อนหลัง</h3>
+            <h3 style="margin-top:0; font-size:16px; color: var(--text-muted);">Temperature History</h3>
             <canvas id="tempChart"></canvas>
         </div>
     </div>
 
     <script>
         // ==========================================================================
-        // 3. ส่วนควบคุมระบบธีม (LocalStorage ตามตัวอย่างที่คุณส่งมา)
+        // 4. ระบบควบคุม Toggle Switch แบบเลื่อน (Light/Dark Mode)
         // ==========================================================================
-        const body = document.body;
-        const themeBtn = document.getElementById('toggle-theme');
+        const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+        const themeText = document.getElementById('theme-text');
         
-        // ตรวจสอบว่าผู้ใช้เคยบันทึกโหมดไว้หรือไม่ ถ้าไม่เคยจะใช้ light-mode เป็นค่าเริ่มต้น
-        const savedTheme = localStorage.getItem('theme') || 'light-mode';
-        body.className = savedTheme;
-
-        themeBtn.addEventListener('click', () => {
-            if (body.classList.contains('dark-mode')) {
-                body.classList.remove('dark-mode');
-                body.classList.add('light-mode');
-                localStorage.setItem('theme', 'light-mode');
-            } else {
-                body.classList.remove('light-mode');
-                body.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark-mode');
+        // ตรวจสอบค่าโหมดล่าสุดจาก LocalStorage
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme) {
+            document.body.classList.add(currentTheme);
+            if (currentTheme === 'dark-mode') {
+                toggleSwitch.checked = true;
+                themeText.innerText = 'Dark Mode';
             }
-        });
+        }
+
+        // ฟังก์ชันสลับโหมดเมื่อมีการเลื่อนสวิตช์
+        function switchTheme(e) {
+            if (e.target.checked) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('theme', 'dark-mode');
+                themeText.innerText = 'Dark Mode';
+            } else {
+                document.body.classList.add('light-mode');
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light-mode');
+                themeText.innerText = 'Light Mode';
+            }
+            // อัปเดตสีกราฟให้เข้ากับธีม
+            updateChartTheme();
+        }
+        toggleSwitch.addEventListener('change', switchTheme, false);
 
         // ==========================================================================
-        // 4. ระบบนาฬิกา และ อนิเมชันเปลี่ยนตามเวลาจริง (กลางวัน/กลางคืน)
+        // 5. ระบบนาฬิกา และ อนิเมชันเปลี่ยนตามเวลาจริง
         // ==========================================================================
         function updateClockAndSky() {
             const now = new Date();
-            // อัปเดตตัวเลขนาฬิกา
-            document.getElementById('clock').innerText = now.toLocaleTimeString('th-TH');
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
             
             const hour = now.getHours();
             const skyIcon = document.getElementById('sky-icon');
             
-            // ตั้งค่า: เวลา 06:00 ถึง 17:59 เป็นกลางวัน (พระอาทิตย์) นอกเหนือจากนั้นเป็นกลางคืน (พระจันทร์)
+            // พระอาทิตย์ (6 โมงเช้า - 6 โมงเย็น), พระจันทร์ (นอกเวลานั้น)
             if (hour >= 6 && hour < 18) {
                 skyIcon.className = 'sky-icon sun';
             } else {
                 skyIcon.className = 'sky-icon moon';
             }
         }
-        // สั่งให้ทำงานทุกๆ 1 วินาที
         setInterval(updateClockAndSky, 1000);
-        updateClockAndSky(); // สั่งรันทันทีตอนเปิดหน้าเว็บ
+        updateClockAndSky();
 
         // ==========================================================================
-        // 5. ระบบดึงข้อมูลจาก Google Sheets และวาดกราฟ
+        // 6. ระบบดึงข้อมูลจาก Google Sheets และวาดกราฟ Chart.js
         // ==========================================================================
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNjRsvgDeIlfuQbTeWS-2OGGteEWqSZ04fhGH3HZeJJIAPMScUumiJISQgPhmLZeWV/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKQAPzEOXZkVf2ZMB2IqFK2jiqbUQXxf1hMPC9wZTxJ5vs5BY-b7rx6ze3fQSnaNiA/exec";
 
         const labels = [];
         const tempData = [];
@@ -230,17 +256,38 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'อุณหภูมิ (°C)',
+                    label: 'Temp (°C)',
                     data: tempData,
                     borderColor: '#38bdf8',
-                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
                     borderWidth: 3,
                     tension: 0.3,
                     fill: true
                 }]
             },
-            options: { responsive: true }
+            options: { 
+                responsive: true,
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(128,128,128,0.1)' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(128,128,128,0.1)' } }
+                },
+                plugins: { legend: { labels: { color: '#94a3b8' } } }
+            }
         });
+
+        function updateChartTheme() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            const textColor = isDark ? '#cbd5e1' : '#475569';
+            
+            tempChart.options.scales.x.grid.color = gridColor;
+            tempChart.options.scales.y.grid.color = gridColor;
+            tempChart.options.scales.x.ticks.color = textColor;
+            tempChart.options.scales.y.ticks.color = textColor;
+            tempChart.options.plugins.legend.labels.color = textColor;
+            tempChart.update();
+        }
+        updateChartTheme(); // รันครั้งแรกเพื่อปรับสีเส้นกริด
 
         async function loadData() {
             try {
@@ -250,54 +297,34 @@
                 const curTemp = parseFloat(data.current.temp);
                 const curHum = parseFloat(data.current.hum);
 
-                // แสดงผลค่าปัจจุบัน
                 document.getElementById("temp").innerHTML = "🌡 " + curTemp.toFixed(1) + " °C";
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + " %";
-                document.getElementById("status").innerHTML = "🟢 อัปเดตข้อมูลจาก Cloud เรียบร้อย";
+                document.getElementById("status").innerHTML = "🟢 Cloud Sync Active";
                 document.getElementById("status").style.color = "#10b981";
 
-                // ระบบเตือนภัยเปลี่ยนสีการ์ดเมื่ออุณหภูมิวิกฤต (>= 35 องศา)
-                const tempCard = document.getElementById("temp-card");
-                if (curTemp >= 35.0) {
-                    tempCard.classList.add("danger-alert");
-                } else {
-                    tempCard.classList.remove("danger-alert");
-                }
-
-                // เคลียร์ข้อมูลกราฟเก่าเพื่อโหลดชุดประวัติใหม่
-                labels.length = 0; 
-                tempData.length = 0;
-                
-                let totalTemp = 0;
-                let maxTemp = -999;
-                let minTemp = 999;
+                labels.length = 0; tempData.length = 0;
+                let totalTemp = 0; let maxTemp = -999; let minTemp = 999;
 
                 data.history.forEach(item => {
                     labels.push(item.time);
                     tempData.push(item.temp);
-
                     let t = parseFloat(item.temp);
                     totalTemp += t;
                     if (t > maxTemp) maxTemp = t;
                     if (t < minTemp) minTemp = t;
                 });
 
-                // อัปเดตตัวเลขสถิติย้อนหลัง
                 document.getElementById("t-max").innerText = maxTemp.toFixed(1) + "°C";
                 document.getElementById("t-min").innerText = minTemp.toFixed(1) + "°C";
                 document.getElementById("t-avg").innerText = (totalTemp / data.history.length).toFixed(1) + "°C";
 
-                // สั่งวาดกราฟเส้นใหม่
                 tempChart.update();
-
             } catch (err) {
-                document.getElementById("status").innerHTML = "🔴 เชื่อมต่อฐานข้อมูลล้มเหลว";
+                document.getElementById("status").innerHTML = "🔴 Connection Failed";
                 document.getElementById("status").style.color = "#ef4444";
-                console.log(err);
             }
         }
 
-        // โหลดข้อมูลเซนเซอร์อัตโนมัติทุกๆ 10 วินาที
         loadData();
         setInterval(loadData, 10000); 
     </script>
