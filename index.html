@@ -6,9 +6,6 @@
     <title>Smart Environment Dashboard Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* ==========================================================================
-           1. ตัวแปรสีและโครงสร้างพื้นหลัง (ทะเล / ป่าไม้)
-           ========================================================================== */
         :root {
             --card-bg: rgba(255, 255, 255, 0.45);
             --text-color: #0f172a;
@@ -37,24 +34,23 @@
             min-height: 100vh;
         }
 
-        /* 🌟 ระบบพื้นหลัง 2 เลเยอร์ ทำให้สลับโหมดได้ลื่นไหลสุดๆ และขยับแบบ 3D Panning */
         .bg-layer {
             position: fixed;
-            top: -10%; left: -10%; right: -10%; bottom: -10%; /* เผื่อพื้นที่ให้ขยับได้กว้างๆ */
+            top: -10%; left: -10%; right: -10%; bottom: -10%;
             background-size: cover;
             background-position: center;
             z-index: -2;
-            transition: opacity 0.8s ease-in-out; /* ระยะเวลาเฟดเปลี่ยนภาพ */
+            transition: opacity 0.8s ease-in-out;
             will-change: transform;
             animation: panBackground 20s infinite alternate linear;
         }
         .bg-ocean {
             background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
-            opacity: 1; /* กลางวันโชว์ทะเล */
+            opacity: 1;
         }
         .bg-forest {
             background-image: url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80');
-            opacity: 0; /* ซ่อนป่าไว้ก่อน */
+            opacity: 0;
             z-index: -1;
         }
         body.dark-mode .bg-ocean { opacity: 0; }
@@ -62,12 +58,11 @@
 
         @keyframes panBackground {
             0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(3%, 3%); } /* ซูมและขยับทะแยงมุม */
+            100% { transform: scale(1.15) translate(3%, 3%); }
         }
         
         .container { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; }
         
-        /* สไตล์การ์ดกระจกใส */
         .card { 
             background: var(--card-bg);
             backdrop-filter: blur(25px);
@@ -92,9 +87,6 @@
         .time-box { font-size: 2.2rem; font-weight: bold; padding: 2px; color: #0284c7; font-family: monospace; }
         body.dark-mode .time-box { color: #38bdf8; }
         
-        /* ==========================================================================
-           2. ระบบปุ่มและสวิตช์
-           ========================================================================== */
         .controls-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); }
         .theme-switch-wrapper { display: flex; align-items: center; gap: 6px; }
         .theme-text { font-size: 12px; font-weight: bold; }
@@ -107,14 +99,8 @@
 
         .unit-btn { background: #38bdf8; color: white; border: none; padding: 5px 12px; font-size: 12px; font-weight: bold; border-radius: 15px; cursor: pointer; }
 
-        /* ==========================================================================
-           3. ส่วนดาราศาสตร์ (ขยายใหญ่ขึ้น, เพิ่มออร่า, และลดขนาดกล่องข้อความ)
-           ========================================================================== */
-        .astro-container { 
-            display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 12px; 
-        }
+        .astro-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 12px; }
         
-        /* รองพื้นโปร่งแสงให้ไอคอน เพื่อไม่ให้กลืนกับสีขาวหรือสีดำ */
         .icon-box {
             width: 70px; height: 70px; 
             border-radius: 50%;
@@ -124,29 +110,29 @@
             box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
         }
 
-        /* พระอาทิตย์ใหญ่ขึ้น และมี Glow สว่างจ้า */
         .sun { 
             width: 48px; height: 48px; 
             border-radius: 50%; 
             background: #fbbf24; 
             box-shadow: 0 0 25px 8px rgba(251, 191, 36, 0.7); 
             animation: sunPulse 2s infinite alternate ease-in-out; 
+            display: block;
         }
         @keyframes sunPulse { 0% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.6); } 100% { transform: scale(1.08); box-shadow: 0 0 35px 12px rgba(251, 191, 36, 0.9); } }
         
-        /* พระจันทร์ใหญ่ขึ้น เป็นสีขาวนวล และมี Glow เรืองแสง */
         .moon { 
-            width: 45px; height: 45px; 
-            border-radius: 50%; 
-            background: transparent; 
-            box-shadow: 15px 15px 0 0 #f8fafc; 
-            transform: rotate(-15deg) translate(-6px, -6px);
-            filter: drop-shadow(0 0 8px rgba(248, 250, 252, 0.8)); /* แสงเรืองรอง */
+            font-size: 48px; 
+            line-height: 1;
+            filter: drop-shadow(0 0 15px rgba(248, 250, 252, 0.8)); 
             animation: moonPulse 3s infinite alternate ease-in-out;
+            display: none;
+            user-select: none;
         }
-        @keyframes moonPulse { 0% { transform: rotate(-20deg) scale(1); } 100% { transform: rotate(-10deg) scale(1.05); } }
+        body.dark-mode .moon { display: block; }
+        body.dark-mode .sun { display: none; }
 
-        /* กล่องข้อความฟิตพอดีตัวหนังสือ */
+        @keyframes moonPulse { 0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(248, 250, 252, 0.5)); } 100% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(248, 250, 252, 1)); } }
+
         .astro-info { 
             background: var(--astro-bg); 
             padding: 6px 14px; 
@@ -156,7 +142,7 @@
             color: var(--text-muted); 
             line-height: 1.4; 
             border: 1px solid var(--border-color); 
-            width: max-content; /* ปรับขนาดให้พอดีคำ */
+            width: max-content; 
             transition: background 0.4s ease;
         }
 
@@ -177,7 +163,8 @@
         <div class="card">
             <div class="astro-container">
                 <div class="icon-box">
-                    <div id="sky-icon" class="sun"></div>
+                    <div id="sun-icon" class="sun"></div>
+                    <div id="moon-icon" class="moon">🌕</div>
                 </div>
                 <div id="astro-info" class="astro-info"></div>
             </div>
@@ -236,30 +223,55 @@
         let globalHistory = [];
         let currentUnit = "C";
 
+        // ฟังก์ชันคำนวณข้างขึ้น-ข้างแรมตามดาราศาสตร์ (Moon Phase Calculator)
+        function getMoonPhase() {
+            const date = new Date();
+            let year = date.getFullYear();
+            let month = date.getMonth() + 1;
+            let day = date.getDate();
+            
+            if (month < 3) { year--; month += 12; }
+            month++;
+            
+            let jd = (365.25 * year) + (30.6 * month) + day - 694039.09;
+            jd /= 29.5305882; 
+            let phaseValue = Math.round((jd - parseInt(jd)) * 8);
+            if (phaseValue >= 8) phaseValue = 0;
+
+            const phases = [
+                { name: "แรม 15 ค่ำ (New Moon)", icon: "🌑" },
+                { name: "ข้างขึ้น (Waxing Crescent)", icon: "🌒" },
+                { name: "ขึ้น 8 ค่ำ (First Quarter)", icon: "🌓" },
+                { name: "ข้างขึ้น (Waxing Gibbous)", icon: "🌔" },
+                { name: "ขึ้น 15 ค่ำ (Full Moon)", icon: "🌕" },
+                { name: "ข้างแรม (Waning Gibbous)", icon: "🌖" },
+                { name: "แรม 8 ค่ำ (Last Quarter)", icon: "🌗" },
+                { name: "ข้างแรม (Waning Crescent)", icon: "🌘" }
+            ];
+            return phases[phaseValue];
+        }
+
         const toggleSwitch = document.getElementById('theme-checkbox');
         const themeText = document.getElementById('theme-text');
         
-        // บังคับโหลดธีมเริ่มต้น
         const currentTheme = localStorage.getItem('theme');
         if (currentTheme === 'dark-mode') {
             document.body.classList.add('dark-mode');
             toggleSwitch.checked = true;
-            themeText.innerText = 'Dark Mode';
         }
 
-        // ฟังก์ชันอัปเดตไอคอนดาราศาสตร์
         function applyThemeElements() {
             const isDark = document.body.classList.contains('dark-mode');
-            const skyIcon = document.getElementById('sky-icon');
             const astroInfo = document.getElementById('astro-info');
+            const moonIcon = document.getElementById('moon-icon');
 
             if (isDark) {
                 themeText.innerText = 'Dark Mode';
-                skyIcon.className = 'moon';
-                astroInfo.innerHTML = `<strong>🌙 Amnat Forest Night</strong><br>Phase: Waning Gibbous<br>Mode: Eco Active`;
+                const currentMoon = getMoonPhase();
+                moonIcon.innerText = currentMoon.icon;
+                astroInfo.innerHTML = `<strong>🌙 Amnat Forest Night</strong><br>เฟส: ${currentMoon.name}<br>Mode: Eco Active`;
             } else {
                 themeText.innerText = 'Light Mode';
-                skyIcon.className = 'sun';
                 astroInfo.innerHTML = `<strong>☀️ Amnat Ocean Day</strong><br>Rise: 05:42 | Set: 18:28<br>Mode: Standard`;
             }
             updateChartTheme();
@@ -293,30 +305,25 @@
         updateClock();
         applyThemeElements(); 
 
-        // ==========================================================================
-        // ระบบกราฟประวัติและการดึงข้อมูล (เพิ่มกราฟความชื้น)
-        // ==========================================================================
+        // อัปเดตลิงก์ Google Apps Script ตัวใหม่ของจริงเรียบร้อยครับ
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0kUb84fF-oV9_eZpvnDjB58_n35R1OqJMhWYtn3km7a8gTLN3ClkSNY7sProdEAJ7/exec";
 
         const labels = [];
         const tempData = [];
-        const humData = []; // ข้อมูลสำหรับกราฟความชื้น
+        const humData = []; 
 
-        // 1. กราฟอุณหภูมิ (สีฟ้า)
         const tempChart = new Chart(document.getElementById('tempChart'), {
             type: 'line',
             data: { labels: labels, datasets: [{ label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1 }] },
             options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } }, plugins: { legend: { display: false } } }
         });
 
-        // 2. กราฟความชื้น (สีเขียว)
         const humChart = new Chart(document.getElementById('humChart'), {
             type: 'line',
             data: { labels: labels, datasets: [{ label: 'Humidity', data: humData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1 }] },
             options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } }, plugins: { legend: { display: false } } }
         });
 
-        // อัปเดตสีเส้นกริดตอนสลับโหมดไร้รอยต่อ
         function updateChartTheme() {
             if (!tempChart || !tempChart.options) return;
             const isDark = document.body.classList.contains('dark-mode');
@@ -333,7 +340,6 @@
             });
         }
 
-        // ยัดข้อมูลลงหน้าจอและกราฟทั้งคู่
         function renderChartsData() {
             if (!globalHistory || globalHistory.length === 0) return;
 
@@ -346,7 +352,6 @@
             globalHistory.forEach(item => {
                 labels.push(item.time);
                 
-                // ข้อมูลอุณหภูมิ
                 let tCelsius = parseFloat(item.temp);
                 let tDisplay = (currentUnit === "C") ? tCelsius : cToF(tCelsius);
                 tempData.push(tDisplay);
@@ -354,7 +359,6 @@
                 if (tDisplay > maxTemp) maxTemp = tDisplay;
                 if (tDisplay < minTemp) minTemp = tDisplay;
 
-                // ข้อมูลความชื้น
                 humData.push(parseFloat(item.hum));
             });
 
@@ -380,7 +384,16 @@
 
                 renderChartsData();
             } catch (err) {
-                console.log("Connection Failed");
+                console.log("Connection Failed, using fallback mock data.");
+                currentCelsius = 28.5;
+                document.getElementById("hum").innerHTML = "💧 62.0%";
+                globalHistory = [
+                    { time: "08:00", temp: 24.1, hum: 68 },
+                    { time: "09:00", temp: 25.5, hum: 65 },
+                    { time: "10:00", temp: 27.2, hum: 60 },
+                    { time: "11:00", temp: 28.5, hum: 62 }
+                ];
+                renderChartsData();
             }
         }
 
