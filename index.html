@@ -1,64 +1,209 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Smart Environment Dashboard</title>
+    <title>Smart Environment Dashboard Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background:#0f172a; color:white; font-family:Arial, sans-serif; text-align:center; padding:20px; }
-        .card { background:#1e293b; padding:20px; margin:15px auto; max-width:500px; border-radius:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .value { font-size:42px; font-weight:bold; color: #38bdf8; }
-        .status { font-size: 18px; font-weight: bold; margin-top: 10px; }
+        /* ตัวแปรธีมสีสำหรับระบบ Light / Dark Mode */
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #ffffff;
+            --text-muted: #94a3b8;
+        }
+        .light-mode {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body { 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0;
+            transition: background 0.3s, color 0.3s;
+        }
+        h1 { margin-bottom: 5px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        .card { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            margin: 15px auto; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            transition: background 0.3s, transform 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); }
+        
+        .value { font-size: 46px; font-weight: bold; color: #38bdf8; }
+        .status { font-size: 16px; font-weight: bold; }
+        
+        /* สไตล์ปุ่มกด */
+        button { 
+            padding: 10px 20px; 
+            font-size: 14px; 
+            font-weight: bold;
+            border-radius: 10px; 
+            border: none; 
+            cursor: pointer; 
+            margin: 5px;
+            background: #334155; 
+            color: white;
+            transition: 0.2s;
+        }
+        button:hover { background: #475569; }
+        
+        /* สไตล์โซนสถิติสรุปค่า */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .stat-box { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 10px; font-size: 14px; }
+        .stat-label { color: var(--text-muted); font-size: 12px; }
+
+        /* เตือนภัยเมื่ออุณหภูมิวิกฤต (ร้อนเกิน 35°C) */
+        .danger-alert {
+            background: #ef4444 !important;
+            animation: pulse 2s infinite;
+        }
+        .danger-alert .value, .danger-alert h2 { color: white !important; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        canvas { background: white; border-radius: 15px; padding: 10px; }
     </style>
 </head>
 <body>
-    <h1>🌍 Smart Environment</h1>
-    <div class="card">
-        <h2>Temperature</h2>
-        <div id="temp" class="value">🌡 -- °C</div>
+    <div class="container">
+        <div style="text-align: right;">
+            <button onclick="toggleTheme()">🌓 สลับโหมด มืด/สว่าง</button>
+        </div>
+
+        <h1>🌍 Smart Environment</h1>
+        <p style="color: var(--text-muted); margin-top: 0;">ระบบติดตามสภาพแวดล้อมอัจฉริยะ</p>
+
+        <div id="temp-card" class="card">
+            <h2 style="margin:0; font-size:18px;">Temperature</h2>
+            <div id="temp" class="value">🌡 -- °C</div>
+            
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-label">ต่ำสุด</div><span id="t-min">--</span></div>
+                <div class="stat-box"><div class="stat-label">เฉลี่ย</div><span id="t-avg">--</span></div>
+                <div class="stat-box"><div class="stat-label">สูงสุด</div><span id="t-max">--</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin:0; font-size:18px;">Humidity</h2>
+            <div id="hum" class="value" style="color: #10b981;">💧 -- %</div>
+        </div>
+
+        <div class="card" style="padding: 12px;">
+            <div id="status" class="status">⏳ กำลังดึงข้อมูลประวัติจากระบบ Cloud...</div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top:0; font-size:16px; color: var(--text-muted);">กราฟแสดงแนวโน้มอุณหภูมิย้อนหลัง</h3>
+            <canvas id="tempChart"></canvas>
+        </div>
     </div>
-    <div class="card">
-        <h2>Humidity</h2>
-        <div id="hum" class="value">💧 -- %</div>
-    </div>
-    <div class="card">
-        <div id="status" class="status">⏳ Connecting to Cloud...</div>
-    </div>
-    <div class="card"><canvas id="tempChart"></canvas></div>
 
     <script>
-        // ใส่ URL ของ Google Apps Script ของคุณที่นี่
+        // ใช้ URL ของ Google Apps Script ของคุณ
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKQAPzEOXZkVf2ZMB2IqFK2jiqbUQXxf1hMPC9wZTxJ5vs5BY-b7rx6ze3fQSnaNiA/exec";
 
+        // ตั้งค่ากราฟ Chart.js
         const labels = [];
         const tempData = [];
         const tempChart = new Chart(document.getElementById('tempChart'), {
             type: 'line',
-            data: { labels: labels, datasets: [{ label: 'Temp History', data: tempData, borderColor: '#38bdf8', tension: 0.3 }] },
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'อุณหภูมิ (°C)',
+                    data: tempData,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
             options: { responsive: true }
         });
 
+        // ฟังก์ชันสลับโหมด มืด/สว่าง
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        // ฟังก์ชันโหลดข้อมูลหลัก
         async function loadData() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
 
-                document.getElementById("temp").innerHTML = "🌡 " + parseFloat(data.temp).toFixed(1) + " °C";
-                document.getElementById("hum").innerHTML = "💧 " + parseFloat(data.hum).toFixed(1) + " %";
-                document.getElementById("status").innerHTML = "🟢 Online (Cloud Mode)";
+                // 1. แสดงผลค่าปัจจุบันบนหน้าจอ
+                const curTemp = parseFloat(data.current.temp);
+                const curHum = parseFloat(data.current.hum);
+
+                document.getElementById("temp").innerHTML = "🌡 " + curTemp.toFixed(1) + " °C";
+                document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + " %";
+                document.getElementById("status").innerHTML = "🟢 อัปเดตล่าสุดเรียบร้อย (Cloud Mode)";
+                document.getElementById("status").style.color = "#10b981";
+
+                // [ข้อ 3] ระบบแจ้งเตือนเปลี่ยนสีการ์ด: ถ้าร้อนเกิน 35 องศา ให้การ์ดกลายเป็นสีแดงกระพริบ
+                const tempCard = document.getElementById("temp-card");
+                if (curTemp >= 35.0) {
+                    tempCard.classList.add("danger-alert");
+                } else {
+                    tempCard.classList.remove("danger-alert");
+                }
+
+                // [ข้อ 1] วาดกราฟจากประวัติย้อนหลังที่ดึงมาจาก Google Sheets
+                labels.length = 0; // เคลียร์ค่ากราฟเก่าออกก่อน
+                tempData.length = 0;
                 
-                labels.push(new Date().toLocaleTimeString());
-                tempData.push(data.temp);
-                if(labels.length > 20) { labels.shift(); tempData.shift(); }
+                let totalTemp = 0;
+                let maxTemp = -999;
+                let minTemp = 999;
+
+                data.history.forEach(item => {
+                    labels.push(item.time);
+                    tempData.push(item.temp);
+
+                    // คำนวณหา Max / Min / Avg ย้อนหลัง 20 ครั้งล่าสุด
+                    let t = parseFloat(item.temp);
+                    totalTemp += t;
+                    if (t > maxTemp) maxTemp = t;
+                    if (t < minTemp) minTemp = t;
+                });
+
+                // ใส่ค่าทางสถิติลงในการ์ด
+                document.getElementById("t-max").innerText = maxTemp.toFixed(1) + "°C";
+                document.getElementById("t-min").innerText = minTemp.toFixed(1) + "°C";
+                document.getElementById("t-avg").innerText = (totalTemp / data.history.length).toFixed(1) + "°C";
+
+                // สั่งอัปเดตรูปร่างกราฟ
                 tempChart.update();
-            } catch(err) {
-                document.getElementById("status").innerHTML = "🔴 Offline (Cannot connect)";
+
+            } catch (err) {
+                document.getElementById("status").innerHTML = "🔴 เชื่อมต่อฐานข้อมูลล้มเหลว";
+                document.getElementById("status").style.color = "#ef4444";
+                console.log(err);
             }
         }
-        
+
+        // เริ่มรันครั้งแรกเมื่อเปิดหน้าเว็บ และตั้งเวลาให้อัปเดตอัตโนมัติทุกๆ 10 วินาที
         loadData();
-        setInterval(loadData, 5000);
+        setInterval(loadData, 10000); 
     </script>
 </body>
 </html>
