@@ -371,20 +371,43 @@
             updateChartTheme(); 
         }
 
-        async function loadData() {
+       async function loadData() {
             try {
-                const response = await fetch(SCRIPT_URL);
+                // 1. ดึงข้อมูลจาก Google Sheets (เพิ่มโหมด cors)
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) throw new Error('Network response error');
+                
                 const data = await response.json();
 
-                currentCelsius = parseFloat(data.current.temp);
-                globalHistory = data.history;
-
-                const curHum = parseFloat(data.current.hum);
+                // 2. ปรับให้ดึงค่าตรงกับตัวแปรที่ Google Script ส่งมา (แก้จาก data.current.temp เป็น data.temp)
+                // หาก Google Script ของคุณใช้ชื่ออื่น ให้แก้ตรง 'data.temp' กับ 'data.humidity' ให้ตรงกัน
+                currentCelsius = parseFloat(data.temp || data.current?.temp || 0); 
+                const curHum = parseFloat(data.humidity || data.hum || data.current?.hum || 0); 
+                
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
 
+                // 3. จัดการข้อมูลกราฟประวัติ (History)
+                // ถ้า Google Script มีการส่งประวัติมาด้วย ก็ใช้ของจริง
+                if (data.history && data.history.length > 0) {
+                    globalHistory = data.history;
+                } else {
+                    // ถ้ายังไม่มีประวัติส่งมา ให้พลอตค่าปัจจุบัน 1 จุดไปก่อนเพื่อไม่ให้กราฟพัง
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', hour12: false});
+                    globalHistory = [{ time: timeString, temp: currentCelsius, hum: curHum }];
+                }
+
+                // 4. สั่งให้วาดกราฟและอัปเดตตัวเลข
                 renderChartsData();
+                console.log("ดึงข้อมูลจริงสำเร็จ!");
+
             } catch (err) {
-                console.log("Connection Failed, using fallback mock data.");
+                console.warn("ดึงข้อมูลล้มเหลว หรือรูปแบบผิด ใช้ข้อมูลจำลองแทน", err);
+                // ข้อมูลจำลองเมื่อเน็ตหลุดหรือมีปัญหา
                 currentCelsius = 28.5;
                 document.getElementById("hum").innerHTML = "💧 62.0%";
                 globalHistory = [
@@ -396,7 +419,6 @@
                 renderChartsData();
             }
         }
-
         loadData();
         setInterval(loadData, 10000); 
     </script>
