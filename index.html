@@ -64,17 +64,42 @@
         .time-box { font-size: 2.5rem; font-weight: bold; padding: 10px; margin: 5px 0; color: #38bdf8; font-family: monospace; }
         
         /* ==========================================================================
-           2. Toggle Switch สลับธีมแบบเลื่อนซ้าย-ขวา
+           2. ส่วนควบคุมสวิตช์และปุ่มกดต่างๆ
            ========================================================================== */
-        .theme-switch-wrapper { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 15px; }
-        .theme-text { font-size: 16px; font-weight: bold; color: var(--text-color); min-width: 90px; }
-        .theme-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .controls-row { 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            margin-top: 15px; 
+            padding-top: 15px; 
+            border-top: 1px solid var(--border-color);
+            gap: 10px;
+        }
+
+        /* Toggle Switch สำหรับสลับธีม */
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 8px; }
+        .theme-text { font-size: 14px; font-weight: bold; color: var(--text-color); }
+        .theme-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .theme-switch input { opacity: 0; width: 0; height: 0; }
-        
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #38bdf8; transition: .4s; border-radius: 34px; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #38bdf8; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #0f172a; }
-        input:checked + .slider:before { transform: translateX(26px); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* ปุ่มสลับหน่วยองศา °C / °F */
+        .unit-btn {
+            background: #38bdf8;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: 0.2s;
+        }
+        .unit-btn:hover { transform: scale(1.05); background: #0284c7; }
 
         /* ==========================================================================
            3. อนิเมชันสภาพแวดล้อม และ ข้อมูลดาราศาสตร์ย่อ
@@ -116,12 +141,15 @@
             
             <div id="clock" class="time-box">00:00:00</div>
             
-            <div class="theme-switch-wrapper">
-                <span id="theme-text" class="theme-text">Light Mode</span>
-                <label class="theme-switch" for="theme-checkbox">
-                    <input type="checkbox" id="theme-checkbox" />
-                    <div class="slider"></div>
-                </label>
+            <div class="controls-row">
+                <div class="theme-switch-wrapper">
+                    <span id="theme-text" class="theme-text">Light Mode</span>
+                    <label class="theme-switch" for="theme-checkbox">
+                        <input type="checkbox" id="theme-checkbox" />
+                        <div class="slider"></div>
+                    </label>
+                </div>
+                <button id="unit-btn" class="unit-btn" onclick="toggleUnit()">สลับหน่วย (°C)</button>
             </div>
         </div>
 
@@ -156,6 +184,11 @@
     </div>
 
     <script>
+        // ข้อมูล Global สำหรับเก็บค่าอุณหภูมิดิบ (หน่วยเซลเซียส) เพื่อใช้แปลงสลับหน่วย
+        let currentCelsius = 0;
+        let globalHistory = [];
+        let currentUnit = "C"; // C = เซลเซียส, F = ฟาเรนไฮต์
+
         // ==========================================================================
         // 1. ระบบ Parallax Background (เลื่อนพื้นหลังตอนไถจอ)
         // ==========================================================================
@@ -196,7 +229,22 @@
         toggleSwitch.addEventListener('change', switchTheme, false);
 
         // ==========================================================================
-        // 3. ระบบนาฬิกา และ อนิเมชันดาราศาสตร์ (Astro Data)
+        // 3. ฟังก์ชันแปลงหน่วยอุณหภูมิ และสลับหน่วย (°C / °F)
+        // ==========================================================================
+        function cToF(celsius) {
+            return (celsius * 9/5) + 32;
+        }
+
+        function toggleUnit() {
+            currentUnit = (currentUnit === "C") ? "F" : "C";
+            document.getElementById("unit-btn").innerText = `สลับหน่วย (°${currentUnit === "C" ? "F" : "C"})`;
+            
+            // อัปเดตการแสดงผลหน้าจอใหม่ทันทีโดยไม่ต้องรอโหลดข้อมูลรอบถัดไป
+            renderTemperatureData();
+        }
+
+        // ==========================================================================
+        // 4. ระบบนาฬิกา และ อนิเมชันดาราศาสตร์ (Astro Data)
         // ==========================================================================
         function updateClockAndSky() {
             const now = new Date();
@@ -206,7 +254,6 @@
             const skyIcon = document.getElementById('sky-icon');
             const astroInfo = document.getElementById('astro-info');
             
-            // ตั้งค่าสำหรับเวลาท้องถิ่น จังหวัดอำนาจเจริญ (จำลองข้อมูลแบบกระชับ)
             if (hour >= 6 && hour < 18) {
                 skyIcon.className = 'sky-icon sun';
                 astroInfo.innerHTML = `
@@ -229,28 +276,25 @@
         updateClockAndSky();
 
         // ==========================================================================
-        // 4. ระบบ Data Logging Toggle
+        // 5. ระบบ Data Logging Toggle
         // ==========================================================================
         let isLogging = true;
         function toggleLogging() {
             isLogging = !isLogging;
             const btn = document.getElementById('log-btn');
-            
             if (isLogging) {
                 btn.className = "log-btn log-on";
                 btn.innerText = "🟢 กำลังบันทึกข้อมูล";
-                // TODO: ส่งคำสั่ง fetch ไปหาบอร์ดให้เปิดการส่งข้อมูล
             } else {
                 btn.className = "log-btn log-off";
                 btn.innerText = "🔴 หยุดการบันทึกชั่วคราว";
-                // TODO: ส่งคำสั่ง fetch ไปหาบอร์ดให้หยุดการส่งข้อมูล
             }
         }
 
         // ==========================================================================
-        // 5. ระบบดึงข้อมูลจาก Google Sheets และวาดกราฟ Chart.js
+        // 6. ระบบดึงข้อมูลและวาดกราฟ Chart.js
         // ==========================================================================
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNjRsvgDeIlfuQbTeWS-2OGGteEWqSZ04fhGH3HZeJJIAPMScUumiJISQgPhmLZeWV/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmyqY3xDRfgR6jgtX-xoFAGkzY76CkmgyEOI2NOsh_hgepxMK3V53_ybua-Z4_kEBm/exec";
 
         const labels = [];
         const tempData = [];
@@ -259,7 +303,7 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Temp (°C)', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.2)', borderWidth: 3, tension: 0.3, fill: true
+                    label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.2)', borderWidth: 3, tension: 0.3, fill: true
                 }]
             },
             options: { 
@@ -283,34 +327,56 @@
         }
         updateChartTheme();
 
+        // ฟังก์ชันประมวลผลคำนวณและแสดงผลค่าอุณหภูมิตามหน่วยที่ถูกเลือก
+        function renderTemperatureData() {
+            if (!globalHistory || globalHistory.length === 0) return;
+
+            // 1. อัปเดตส่วนอุณหภูมิปัจจุบัน
+            let displayTemp = (currentUnit === "C") ? currentCelsius : cToF(currentCelsius);
+            document.getElementById("temp").innerHTML = `🌡 ${displayTemp.toFixed(1)} °${currentUnit}`;
+
+            // 2. คำนวณและอัปเดตส่วน MIN / AVG / MAX และจัดข้อมูลลงกราฟ
+            labels.length = 0; 
+            tempData.length = 0;
+            let totalTemp = 0; 
+            let maxTemp = -999; 
+            let minTemp = 999;
+
+            globalHistory.forEach(item => {
+                labels.push(item.time);
+                let tCelsius = parseFloat(item.temp);
+                let tDisplay = (currentUnit === "C") ? tCelsius : cToF(tCelsius);
+                
+                tempData.push(tDisplay);
+                totalTemp += tDisplay;
+                if (tDisplay > maxTemp) maxTemp = tDisplay;
+                if (tDisplay < minTemp) minTemp = tDisplay;
+            });
+
+            document.getElementById("t-max").innerText = `${maxTemp.toFixed(1)}°${currentUnit}`;
+            document.getElementById("t-min").innerText = `${minTemp.toFixed(1)}°${currentUnit}`;
+            document.getElementById("t-avg").innerText = `${(totalTemp / globalHistory.length).toFixed(1)}°${currentUnit}`;
+
+            // อัปเดตป้ายชื่อบนหัวกราฟตามหน่วยที่เลือก
+            tempChart.data.datasets[0].label = `Temp (°${currentUnit})`;
+            tempChart.update();
+        }
+
         async function loadData() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
 
-                const curTemp = parseFloat(data.current.temp);
-                const curHum = parseFloat(data.current.hum);
+                // บันทึกค่าที่ได้ลงในตัวแปร Global
+                currentCelsius = parseFloat(data.current.temp);
+                globalHistory = data.history;
 
-                document.getElementById("temp").innerHTML = "🌡 " + curTemp.toFixed(1) + " °C";
+                // อัปเดตค่าความชื้น (ไม่ต้องแปลงหน่วย)
+                const curHum = parseFloat(data.current.hum);
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + " %";
 
-                labels.length = 0; tempData.length = 0;
-                let totalTemp = 0; let maxTemp = -999; let minTemp = 999;
-
-                data.history.forEach(item => {
-                    labels.push(item.time);
-                    tempData.push(item.temp);
-                    let t = parseFloat(item.temp);
-                    totalTemp += t;
-                    if (t > maxTemp) maxTemp = t;
-                    if (t < minTemp) minTemp = t;
-                });
-
-                document.getElementById("t-max").innerText = maxTemp.toFixed(1) + "°C";
-                document.getElementById("t-min").innerText = minTemp.toFixed(1) + "°C";
-                document.getElementById("t-avg").innerText = (totalTemp / data.history.length).toFixed(1) + "°C";
-
-                tempChart.update();
+                // เรียกฟังก์ชันประมวลผลอุณหภูมิ
+                renderTemperatureData();
             } catch (err) {
                 console.log("Connection Failed");
             }
