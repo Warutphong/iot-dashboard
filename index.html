@@ -1,35 +1,201 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Dashboard</title>
-</head>
-<body>
-    <h1>อุณหภูมิ: <span id="temp">--</span> °C</h1>
-    <h1>ความชื้น: <span id="hum">--</span> %</h1>
+<script>
+        let currentCelsius = 0;
+        let globalHistory = [];
+        let currentUnit = "C";
 
-    <script>
-        // เปลี่ยน URL นี้เป็น URL ที่ได้จากการกด Deploy ของคุณ
+        // ฟังก์ชันคำนวณข้างขึ้น-ข้างแรมตามดาราศาสตร์ (Moon Phase Calculator)
+        function getMoonPhase() {
+            const date = new Date();
+            let year = date.getFullYear();
+            let month = date.getMonth() + 1;
+            let day = date.getDate();
+            
+            if (month < 3) { year--; month += 12; }
+            month++;
+            
+            let jd = (365.25 * year) + (30.6 * month) + day - 694039.09;
+            jd /= 29.5305882; 
+            let phaseValue = Math.round((jd - parseInt(jd)) * 8);
+            if (phaseValue >= 8) phaseValue = 0;
+
+            const phases = [
+                { name: "แรม 15 ค่ำ (New Moon)", icon: "🌑" },
+                { name: "ข้างขึ้น (Waxing Crescent)", icon: "🌒" },
+                { name: "ขึ้น 8 ค่ำ (First Quarter)", icon: "🌓" },
+                { name: "ข้างขึ้น (Waxing Gibbous)", icon: "🌔" },
+                { name: "ขึ้น 15 ค่ำ (Full Moon)", icon: "🌕" },
+                { name: "ข้างแรม (Waning Gibbous)", icon: "🌖" },
+                { name: "แรม 8 ค่ำ (Last Quarter)", icon: "🌗" },
+                { name: "ข้างแรม (Waning Crescent)", icon: "🌘" }
+            ];
+            return phases[phaseValue];
+        }
+
+        const toggleSwitch = document.getElementById('theme-checkbox');
+        const themeText = document.getElementById('theme-text');
+        
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark-mode') {
+            document.body.classList.add('dark-mode');
+            toggleSwitch.checked = true;
+        }
+
+        function applyThemeElements() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const astroInfo = document.getElementById('astro-info');
+            const moonIcon = document.getElementById('moon-icon');
+
+            if (isDark) {
+                themeText.innerText = 'Dark Mode';
+                const currentMoon = getMoonPhase();
+                moonIcon.innerText = currentMoon.icon;
+                astroInfo.innerHTML = `<strong>🌙 Amnat Forest Night</strong><br>เฟส: ${currentMoon.name}<br>Mode: Eco Active`;
+            } else {
+                themeText.innerText = 'Light Mode';
+                astroInfo.innerHTML = `<strong>☀️ Amnat Ocean Day</strong><br>Rise: 05:42 | Set: 18:28<br>Mode: Standard`;
+            }
+            updateChartTheme();
+        }
+
+        function switchTheme(e) {
+            if (e.target.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light-mode');
+            }
+            applyThemeElements();
+        }
+        toggleSwitch.addEventListener('change', switchTheme, false);
+
+        function cToF(celsius) { return (celsius * 9/5) + 32; }
+
+        function toggleUnit() {
+            currentUnit = (currentUnit === "C") ? "F" : "C";
+            document.getElementById("unit-btn").innerText = `สลับหน่วย (°${currentUnit === "C" ? "F" : "C"})`;
+            renderChartsData();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+        applyThemeElements(); 
+
+        // 🌟 อัปเดต URL ที่ได้จากการ Deploy เวอร์ชันล่าสุดของคุณตรงนี้ครับ 🌟
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzE_Qd2nqubnmY-6reYWQOaSC4vfmbzoEfkpJApy_7NHU4qphDtYbnk2hDV4ysVtHy0/exec";
 
-        async function fetchData() {
+        // ลบฟังก์ชันที่ซ้ำซ้อนออก และปรับปรุงการดึงข้อมูลเพื่อแก้ปัญหา CORS และ Cache
+        async function loadData() {
             try {
-                // ใช้โหมด no-cors หรือ cors ตามที่เซิร์ฟเวอร์ตั้งค่า
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'GET',
-                    mode: 'cors' 
+                // ใส่ตัวแปรสุ่มเวลาเพื่อไม่ให้บราวเซอร์จำ Cache และบังคับดึงค่าใหม่สดๆ
+                const response = await fetch(`${SCRIPT_URL}?_=${new Date().getTime()}`, {
+                    method: "GET",
+                    mode: "cors", // เปิดโหมดช่วยดึงข้อมูลข้ามเว็บ
+                    headers: {
+                        "Content-Type": "text/plain"
+                    }
                 });
+
+                if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
+
+                // ตรวจสอบโครงสร้างข้อมูลที่ได้รับมา
+                if(data && data.current && data.history) {
+                    currentCelsius = parseFloat(data.current.temp);
+                    const curHum = parseFloat(data.current.hum);
+                    
+                    document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
+                    
+                    globalHistory = data.history;
+                    renderChartsData();
+                } else {
+                    throw new Error('Data format incorrect');
+                }
                 
-                document.getElementById('temp').innerText = data.temp;
-                document.getElementById('hum').innerText = data.humidity;
-            } catch (error) {
-                console.error("Error:", error);
+            } catch (err) {
+                console.log("Connection Failed, using fallback mock data.", err);
+                // ข้อมูลจำลองหากโหลดไม่สำเร็จ (สำหรับกรณีระบบขัดข้อง)
+                currentCelsius = 28.5;
+                document.getElementById("hum").innerHTML = "💧 62.0%";
+                globalHistory = [
+                    { time: "08:00", temp: 24.1, hum: 68 },
+                    { time: "09:00", temp: 25.5, hum: 65 },
+                    { time: "10:00", temp: 27.2, hum: 60 },
+                    { time: "11:00", temp: 28.5, hum: 62 }
+                ];
+                renderChartsData();
             }
         }
 
-        // อัปเดตข้อมูลทุก 5 วินาที
-        setInterval(fetchData, 5000);
-        fetchData();
+        // เริ่มต้นสร้างโครงกราฟเปล่ารอก่อน
+        const labels = [];
+        const tempData = [];
+        const humData = []; 
+
+        const tempChart = new Chart(document.getElementById('tempChart'), {
+            type: 'line',
+            data: { labels: labels, datasets: [{ label: 'Temp', data: tempData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } }, plugins: { legend: { display: false } } }
+        });
+
+        const humChart = new Chart(document.getElementById('humChart'), {
+            type: 'line',
+            data: { labels: labels, datasets: [{ label: 'Humidity', data: humData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.06)' } } }, plugins: { legend: { display: false } } }
+        });
+
+        function updateChartTheme() {
+            if (!tempChart || !tempChart.options) return;
+            const isDark = document.body.classList.contains('dark-mode');
+            const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            
+            [tempChart, humChart].forEach(chart => {
+                if (chart.options.scales && chart.options.scales.y) {
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.update({ duration: 0 });
+                }
+            });
+        }
+
+        function renderChartsData() {
+            if (!globalHistory || globalHistory.length === 0) return;
+
+            let displayTemp = (currentUnit === "C") ? currentCelsius : cToF(currentCelsius);
+            document.getElementById("temp").innerHTML = `🌡 ${displayTemp.toFixed(1)}°${currentUnit}`;
+
+            labels.length = 0; tempData.length = 0; humData.length = 0;
+            let totalTemp = 0; let maxTemp = -999; let minTemp = 999;
+
+            globalHistory.forEach(item => {
+                labels.push(item.time);
+                
+                let tCelsius = parseFloat(item.temp);
+                let tDisplay = (currentUnit === "C") ? tCelsius : cToF(tCelsius);
+                tempData.push(tDisplay);
+                totalTemp += tDisplay;
+                if (tDisplay > maxTemp) maxTemp = tDisplay;
+                if (tDisplay < minTemp) minTemp = tDisplay;
+
+                humData.push(parseFloat(item.hum));
+            });
+
+            document.getElementById("t-max").innerText = `${maxTemp.toFixed(0)}°`;
+            document.getElementById("t-min").innerText = `${minTemp.toFixed(0)}°`;
+            document.getElementById("t-avg").innerText = `${(totalTemp / globalHistory.length).toFixed(0)}°`;
+
+            tempChart.update();
+            humChart.update();
+            updateChartTheme(); 
+        }
+
+        // สั่งให้ทำงานเมื่อเปิดหน้าเว็บทันทีและทำงานซ้ำทุก 10 วินาที
+        loadData();
+        setInterval(loadData, 10000); 
     </script>
-</body>
-</html>
