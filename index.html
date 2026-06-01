@@ -7,10 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-           1. ตัวแปรสีและโครงสร้างพื้นหลังแบบเลเยอร์ลื่นไหล
+           1. ตัวแปรสีและโครงสร้างพื้นหลัง (ทะเลตอนกลางวัน / ป่าไม้ตอนกลางคืน)
            ========================================================================== */
         :root {
-            --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80');
+            /* ภาพทะเลสำหรับกลางวัน */
+            --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
             --card-bg: rgba(255, 255, 255, 0.45);
             --text-color: #0f172a;
             --text-muted: #475569;
@@ -18,7 +19,8 @@
             --astro-bg: rgba(255, 255, 255, 0.3);
         }
         body.dark-mode {
-            --bg-image: url('https://images.unsplash.com/photo-1503756234508-e32369269deb?auto=format&fit=crop&w=1000&q=80');
+            /* ภาพป่าสนสำหรับกลางคืน */
+            --bg-image: url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80');
             --card-bg: rgba(15, 23, 42, 0.55);
             --text-color: #ffffff;
             --text-muted: #94a3b8;
@@ -32,21 +34,31 @@
             text-align: center; 
             padding: 12px; 
             margin: 0;
+            overflow-x: hidden;
             transition: color 0.3s ease;
             min-height: 100vh;
         }
+
+        /* 🌟 ระบบพื้นหลังเคลื่อนไหวได้ (Cinematic Panning) */
         body::before {
             content: "";
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            /* ขยายขนาดเกินหน้าจอเล็กน้อยเพื่อไม่ให้เห็นขอบตอนภาพขยับ */
+            top: -5%; left: -5%; right: -5%; bottom: -5%; 
             background-image: var(--bg-image);
             background-size: cover;
             background-position: center center;
             z-index: -1;
-            transition: background-image 0.4s ease-in-out;
+            transition: background-image 0.5s ease-in-out;
+            animation: panBackground 30s infinite alternate ease-in-out;
+        }
+
+        @keyframes panBackground {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(2%, 2%) scale(1.05); }
         }
         
-        .container { max-width: 480px; margin: 0 auto; }
+        .container { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; }
         
         /* สไตล์กระจกใสยอดนิยม (Glassmorphism) */
         .card { 
@@ -62,7 +74,7 @@
             transition: background 0.3s ease, border 0.3s ease;
         }
         
-        /* จัดสรรสัดส่วนการ์ดแฝด (อุณหภูมิ + ความชื้น เคียงข้างกัน) */
+        /* จัดสรรสัดส่วนการ์ดแฝด */
         .sensor-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -85,7 +97,7 @@
         body.dark-mode .time-box { color: #38bdf8; }
         
         /* ==========================================================================
-           2. ระบบปุ่มและสวิตช์แบบคอมแพคสำหรับ Mobile / PC
+           2. ระบบปุ่มและสวิตช์
            ========================================================================== */
         .controls-row { 
             display: flex; 
@@ -118,7 +130,7 @@
         }
 
         /* ==========================================================================
-           3. ส่วนดาราศาสตร์แบบย่อ ไม่กินพื้นที่
+           3. ส่วนดาราศาสตร์ (ปรับปรุงพระจันทร์ไม่ให้ล้นขอบ)
            ========================================================================== */
         .astro-container { 
             display: flex; 
@@ -128,9 +140,18 @@
             margin-bottom: 8px;
         }
         .sky-icon { width: 45px; height: 45px; border-radius: 50%; flex-shrink: 0; }
+        
         .sun { background: #fbbf24; box-shadow: 0 0 15px #fbbf24; animation: sunPulse 2s infinite ease-in-out; }
         @keyframes sunPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .moon { background: transparent; box-shadow: 12px 12px 0 0 #e2e8f0; transform: rotate(-15deg); margin-left: -12px; margin-top: -12px; }
+        
+        /* 🛠 แก้ไขพระจันทร์: ใช้ inset shadow ให้เงาเว้าเข้าด้านใน ไม่ล้นขอบ */
+        .moon { 
+            background: transparent; 
+            box-shadow: inset -14px -10px 0 0 #e2e8f0; 
+            filter: drop-shadow(0 0 6px rgba(226, 232, 240, 0.4)); /* เรืองแสงเบาๆ */
+            animation: moonPulse 4s infinite alternate ease-in-out;
+        }
+        @keyframes moonPulse { 0% { transform: rotate(-10deg) scale(1); } 100% { transform: rotate(-5deg) scale(1.03); } }
 
         .astro-info { 
             background: var(--astro-bg); 
@@ -144,19 +165,17 @@
             flex-grow: 1;
         }
 
-        /* ปุ่ม Data Logging */
         .log-btn { padding: 10px; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .log-on { background: #10b981; color: white; }
         .log-off { background: #ef4444; color: white; }
 
-        /* กริดสถิติขนาดเล็กแบบเรียบหรู */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 8px; width: 100%; border-top: 1px dashed var(--border-color); padding-top: 6px;}
         .stat-box { font-size: 11px; font-weight: 600; }
         .stat-label { color: var(--text-muted); font-size: 9px; font-weight: bold; }
         
         .chart-container { position: relative; width: 100%; height: 160px; }
-        h2.main-title { font-size: 20px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.5); margin: 15px 0 2px 0; }
-        p.sub-title { color: #f1f5f9; text-shadow: 0 1px 4px rgba(0,0,0,0.4); margin: 0 0 10px 0; font-size: 12px; font-weight: 600; }
+        h2.main-title { font-size: 20px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.7); margin: 15px 0 2px 0; }
+        p.sub-title { color: #f1f5f9; text-shadow: 0 1px 4px rgba(0,0,0,0.6); margin: 0 0 10px 0; font-size: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -314,7 +333,6 @@
             }
         });
 
-        // 🛠 อัปเกรด: ปิดอนิเมชันชั่วคราวขณะสลับโหมด เพื่อตัดปัญหาการสะดุดบนคอมพิวเตอร์และมือถือร้อยเปอร์เซ็นต์
         function updateChartTheme() {
             if (!tempChart || !tempChart.options) return;
             const isDark = document.body.classList.contains('dark-mode');
@@ -325,11 +343,7 @@
                 tempChart.options.scales.y.grid.color = gridColor;
                 tempChart.options.scales.x.ticks.color = textColor;
                 tempChart.options.scales.y.ticks.color = textColor;
-                
-                // อัปเดตแบบไร้อนิเมชัน (ลื่นไหลทันที)
-                tempChart.update({
-                    duration: 0
-                });
+                tempChart.update({ duration: 0 });
             }
         }
 
