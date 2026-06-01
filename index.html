@@ -6,39 +6,52 @@
     <title>Smart Environment Dashboard Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* ==========================================================================
+           1. กำหนดตัวแปรธีมสี (Light / Dark Mode ตามที่คุณส่งตัวอย่างมา)
+           ========================================================================== */
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #ffffff;
-            --text-muted: #94a3b8;
-        }
-        .light-mode {
             --bg-color: #f1f5f9;
             --card-bg: #ffffff;
             --text-color: #0f172a;
             --text-muted: #64748b;
+            --border-clock: #cbd5e1;
         }
+        .dark-mode {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #ffffff;
+            --text-muted: #94a3b8;
+            --border-clock: #38bdf8;
+        }
+
         body { 
             background: var(--bg-color); 
             color: var(--text-color); 
-            font-family: Arial, sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             text-align: center; 
             padding: 20px; 
             margin: 0;
-            transition: background 0.3s, color 0.3s;
+            transition: background 0.5s, color 0.5s; /* อนิเมชันเปลี่ยนสีนุ่มนวล */
         }
         .container { max-width: 600px; margin: 0 auto; }
+        
+        /* สไตล์การ์ดแสดงผล */
         .card { 
             background: var(--card-bg); 
             padding: 20px; 
             margin: 15px auto; 
             border-radius: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
-            transition: background 0.3s, transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            transition: background 0.5s, transform 0.2s;
+            position: relative;
+            overflow: hidden;
         }
         .card:hover { transform: translateY(-2px); }
+        
         .value { font-size: 46px; font-weight: bold; color: #38bdf8; }
         .status { font-size: 16px; font-weight: bold; }
+        
+        /* สไตล์ปุ่มกดสลับโหมด */
         button { 
             padding: 10px 20px; 
             font-size: 14px; 
@@ -47,31 +60,90 @@
             border: none; 
             cursor: pointer; 
             margin: 5px;
-            background: #334155; 
+            background: #38bdf8; 
             color: white;
-            transition: 0.2s;
+            transition: 0.3s;
+            box-shadow: 0 4px 6px rgba(56, 189, 248, 0.2);
         }
-        button:hover { background: #475569; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        
+        /* สไตล์กล่องนาฬิกา */
+        .time-box { 
+            font-size: 2.5rem; 
+            font-weight: bold; 
+            padding: 10px; 
+            margin: 10px 0;
+            color: #38bdf8;
+            font-family: monospace;
+        }
+        
+        /* ==========================================================================
+           2. อนิเมชันสภาพแวดล้อม ท้องฟ้า/ดวงอาทิตย์/ดวงจันทร์เสี้ยว
+           ========================================================================== */
+        .sky-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 90px;
+            margin-bottom: 5px;
+        }
+        .sky-icon { width: 70px; height: 70px; border-radius: 50%; transition: 0.5s; }
+        
+        /* อนิเมชันพระอาทิตย์เวลากลางวัน (มีแสงกระพริบ Pulse ลื่นไหล) */
+        .sun { 
+            background: #fbbf24; 
+            box-shadow: 0 0 25px #fbbf24; 
+            animation: sunPulse 2s infinite ease-in-out; 
+        }
+        @keyframes sunPulse {
+            0% { transform: scale(1); box-shadow: 0 0 15px #fbbf24; }
+            50% { transform: scale(1.08); box-shadow: 0 0 30px #f59e0b; }
+            100% { transform: scale(1); box-shadow: 0 0 15px #fbbf24; }
+        }
+        
+        /* อนิเมชันดวงจันทร์เสี้ยวเวลากลางคืน (ใช้ shadow วาดเป็นวงพระจันทร์โค้งสวยงาม) */
+        .moon { 
+            background: transparent; 
+            box-shadow: 18px 18px 0 0 #e2e8f0; 
+            transform: rotate(-15px);
+            margin-left: -18px; /* ปรับตำแหน่งชดเชยเงา */
+            margin-top: -18px;
+            animation: moonFloat 3s infinite ease-in-out;
+        }
+        @keyframes moonFloat {
+            0% { transform: translateY(0) rotate(-15deg); }
+            50% { transform: translateY(-5px) rotate(-10deg); }
+            100% { transform: translateY(0) rotate(-15deg); }
+        }
+
+        /* โซนสถิติสรุปค่า */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
         .stat-box { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 10px; font-size: 14px; }
         .stat-label { color: var(--text-muted); font-size: 12px; }
+
+        /* การ์ดเตือนภัยสีแดงเมื่อร้อนเกิน 35°C */
         .danger-alert {
             background: #ef4444 !important;
-            animation: pulse 2s infinite;
+            animation: alertPulse 2s infinite;
         }
         .danger-alert .value, .danger-alert h2 { color: white !important; }
-        @keyframes pulse {
+        @keyframes alertPulse {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
+
         canvas { background: white; border-radius: 15px; padding: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div style="text-align: right;">
-            <button onclick="toggleTheme()">🌓 สลับโหมด มืด/สว่าง</button>
+        <div class="card" style="border: 2px solid var(--border-clock);">
+            <div class="sky-container">
+                <div id="sky-icon" class="sky-icon sun"></div>
+            </div>
+            <div id="clock" class="time-box">00:00:00</div>
+            <button id="toggle-theme">🌓 สลับโหมด สีขาว/ดำ</button>
         </div>
 
         <h1>🌍 Smart Environment</h1>
@@ -80,6 +152,7 @@
         <div id="temp-card" class="card">
             <h2 style="margin:0; font-size:18px;">Temperature</h2>
             <div id="temp" class="value">🌡 -- °C</div>
+            
             <div class="stats-grid">
                 <div class="stat-box"><div class="stat-label">ต่ำสุด</div><span id="t-min">--</span></div>
                 <div class="stat-box"><div class="stat-label">เฉลี่ย</div><span id="t-avg">--</span></div>
@@ -103,6 +176,53 @@
     </div>
 
     <script>
+        // ==========================================================================
+        // 3. ส่วนควบคุมระบบธีม (LocalStorage ตามตัวอย่างที่คุณส่งมา)
+        // ==========================================================================
+        const body = document.body;
+        const themeBtn = document.getElementById('toggle-theme');
+        
+        // ตรวจสอบว่าผู้ใช้เคยบันทึกโหมดไว้หรือไม่ ถ้าไม่เคยจะใช้ light-mode เป็นค่าเริ่มต้น
+        const savedTheme = localStorage.getItem('theme') || 'light-mode';
+        body.className = savedTheme;
+
+        themeBtn.addEventListener('click', () => {
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light-mode');
+            } else {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark-mode');
+            }
+        });
+
+        // ==========================================================================
+        // 4. ระบบนาฬิกา และ อนิเมชันเปลี่ยนตามเวลาจริง (กลางวัน/กลางคืน)
+        // ==========================================================================
+        function updateClockAndSky() {
+            const now = new Date();
+            // อัปเดตตัวเลขนาฬิกา
+            document.getElementById('clock').innerText = now.toLocaleTimeString('th-TH');
+            
+            const hour = now.getHours();
+            const skyIcon = document.getElementById('sky-icon');
+            
+            // ตั้งค่า: เวลา 06:00 ถึง 17:59 เป็นกลางวัน (พระอาทิตย์) นอกเหนือจากนั้นเป็นกลางคืน (พระจันทร์)
+            if (hour >= 6 && hour < 18) {
+                skyIcon.className = 'sky-icon sun';
+            } else {
+                skyIcon.className = 'sky-icon moon';
+            }
+        }
+        // สั่งให้ทำงานทุกๆ 1 วินาที
+        setInterval(updateClockAndSky, 1000);
+        updateClockAndSky(); // สั่งรันทันทีตอนเปิดหน้าเว็บ
+
+        // ==========================================================================
+        // 5. ระบบดึงข้อมูลจาก Google Sheets และวาดกราฟ
+        // ==========================================================================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNjRsvgDeIlfuQbTeWS-2OGGteEWqSZ04fhGH3HZeJJIAPMScUumiJISQgPhmLZeWV/exec";
 
         const labels = [];
@@ -124,10 +244,6 @@
             options: { responsive: true }
         });
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-        }
-
         async function loadData() {
             try {
                 const response = await fetch(SCRIPT_URL);
@@ -136,11 +252,13 @@
                 const curTemp = parseFloat(data.current.temp);
                 const curHum = parseFloat(data.current.hum);
 
+                // แสดงผลค่าปัจจุบัน
                 document.getElementById("temp").innerHTML = "🌡 " + curTemp.toFixed(1) + " °C";
                 document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + " %";
-                document.getElementById("status").innerHTML = "🟢 อัปเดตล่าสุดเรียบร้อย (Cloud Mode)";
+                document.getElementById("status").innerHTML = "🟢 อัปเดตข้อมูลจาก Cloud เรียบร้อย";
                 document.getElementById("status").style.color = "#10b981";
 
+                // ระบบเตือนภัยเปลี่ยนสีการ์ดเมื่ออุณหภูมิวิกฤต (>= 35 องศา)
                 const tempCard = document.getElementById("temp-card");
                 if (curTemp >= 35.0) {
                     tempCard.classList.add("danger-alert");
@@ -148,6 +266,7 @@
                     tempCard.classList.remove("danger-alert");
                 }
 
+                // เคลียร์ข้อมูลกราฟเก่าเพื่อโหลดชุดประวัติใหม่
                 labels.length = 0; 
                 tempData.length = 0;
                 
@@ -165,10 +284,12 @@
                     if (t < minTemp) minTemp = t;
                 });
 
+                // อัปเดตตัวเลขสถิติย้อนหลัง
                 document.getElementById("t-max").innerText = maxTemp.toFixed(1) + "°C";
                 document.getElementById("t-min").innerText = minTemp.toFixed(1) + "°C";
                 document.getElementById("t-avg").innerText = (totalTemp / data.history.length).toFixed(1) + "°C";
 
+                // สั่งวาดกราฟเส้นใหม่
                 tempChart.update();
 
             } catch (err) {
@@ -178,91 +299,9 @@
             }
         }
 
+        // โหลดข้อมูลเซนเซอร์อัตโนมัติทุกๆ 10 วินาที
         loadData();
         setInterval(loadData, 10000); 
-    </script>
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Dashboard Pro</title>
-    <style>
-        /* กำหนดสีของแต่ละโหมด */
-        :root { --bg: #f1f5f9; --text: #0f172a; --card: #ffffff; }
-        .dark-mode { --bg: #0f172a; --text: #f8fafc; --card: #1e293b; }
-
-        body { 
-            background-color: var(--bg); color: var(--text); 
-            font-family: 'Segoe UI', sans-serif; transition: 0.5s; 
-            text-align: center; padding: 20px; margin: 0; 
-        }
-        .container { max-width: 500px; margin: auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-
-        /* อนิเมชันท้องฟ้า */
-        .sky-icon { width: 80px; height: 80px; border-radius: 50%; margin: 10px auto; transition: 0.5s; }
-        .sun { background: #fbbf24; box-shadow: 0 0 20px #fbbf24; animation: pulse 2s infinite; }
-        .moon { background: transparent; box-shadow: 15px 15px 0 0 #e2e8f0; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        /* นาฬิกา */
-        .clock { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: #38bdf8; }
-        
-        button { 
-            padding: 10px 20px; cursor: pointer; border-radius: 10px; border: none; 
-            background: #38bdf8; color: white; font-weight: bold; transition: 0.3s;
-        }
-        button:hover { opacity: 0.8; }
-    </style>
-</head>
-<body class="light-mode">
-    <div class="container">
-        <div class="card">
-            <div id="sky" class="sky-icon sun"></div>
-            <div id="clock" class="clock">00:00:00</div>
-            <button id="toggle-theme">สลับโหมด สีขาว/ดำ</button>
-        </div>
-        
-        <div class="card">
-            <h1>ข้อมูลเซนเซอร์</h1>
-            <p>ยินดีต้อนรับสู่ระบบติดตามข้อมูลอัจฉริยะ</p>
-        </div>
-    </div>
-
-    <script>
-        // 1. จัดการเรื่องโหมดสี (Dark/Light)
-        const body = document.body;
-        const btn = document.getElementById('toggle-theme');
-        const savedTheme = localStorage.getItem('theme') || 'light-mode';
-        body.className = savedTheme;
-
-        btn.addEventListener('click', () => {
-            const isDark = body.classList.toggle('dark-mode');
-            body.classList.toggle('light-mode');
-            localStorage.setItem('theme', isDark ? 'dark-mode' : 'light-mode');
-        });
-
-        // 2. ฟังก์ชันนาฬิกา + อนิเมชันพระอาทิตย์/พระจันทร์
-        function updateDisplay() {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
-            
-            const hour = now.getHours();
-            const sky = document.getElementById('sky');
-            
-            // ช่วงเวลา 6:00 - 18:00 เป็นกลางวัน
-            if (hour >= 6 && hour < 18) {
-                sky.className = 'sky-icon sun';
-            } else {
-                sky.className = 'sky-icon moon';
-            }
-        }
-        setInterval(updateDisplay, 1000);
-        updateDisplay();
     </script>
 </body>
 </html>
