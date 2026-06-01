@@ -305,43 +305,53 @@
         updateClock();
         applyThemeElements(); 
 
-        // อัปเดต URL ที่ได้จากการ Deploy รุ่นใหม่ตรงนี้ครับ
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKTYfIqpkkdV4rRLRFX7wddZlAI48JdnogynOfjg6bxnGSvbSwa9_BwZTy5G8xG2E4/exec";
+        // 🌟 อัปเดต URL ที่ได้จากการ Deploy เวอร์ชันล่าสุดของคุณตรงนี้ครับ 🌟
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKTYfIqpkkdV4rRLRFX7wddZlAI48JdnogynOfjg6bxnGSvbSwa9_BwZTy5G8xG2E4/exec";
 
-async function loadData() {
-    try {
-        const response = await fetch(SCRIPT_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
+        // ลบฟังก์ชันที่ซ้ำซ้อนออก และปรับปรุงการดึงข้อมูลเพื่อแก้ปัญหา CORS และ Cache
+        async function loadData() {
+            try {
+                // ใส่ตัวแปรสุ่มเวลาเพื่อไม่ให้บราวเซอร์จำ Cache และบังคับดึงค่าใหม่สดๆ
+                const response = await fetch(`${SCRIPT_URL}?_=${new Date().getTime()}`, {
+                    method: "GET",
+                    mode: "cors", // เปิดโหมดช่วยดึงข้อมูลข้ามเว็บ
+                    headers: {
+                        "Content-Type": "text/plain"
+                    }
+                });
 
-        // ดึงค่าปัจจุบันมาแสดงผล
-        currentCelsius = parseFloat(data.current.temp);
-        const curHum = parseFloat(data.current.hum);
-        
-        document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
-        
-        // ส่งประวัติเข้าสู่ตัวแปร Global เพื่อวาดกราฟ
-        globalHistory = data.history;
-        renderChartsData();
-        
-    } catch (err) {
-        console.log("Connection Failed, using fallback mock data.", err);
-        // ข้อมูลจำลองหากโหลดไม่สำเร็จ
-        currentCelsius = 28.5;
-        document.getElementById("hum").innerHTML = "💧 62.0%";
-        globalHistory = [
-            { time: "08:00", temp: 24.1, hum: 68 },
-            { time: "09:00", temp: 25.5, hum: 65 },
-            { time: "10:00", temp: 27.2, hum: 60 },
-            { time: "11:00", temp: 28.5, hum: 62 }
-        ];
-        renderChartsData();
-    }
-}
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
 
-// โหลดข้อมูลทุกๆ 10 วินาที
-loadData();
-setInterval(loadData, 10000);
+                // ตรวจสอบโครงสร้างข้อมูลที่ได้รับมา
+                if(data && data.current && data.history) {
+                    currentCelsius = parseFloat(data.current.temp);
+                    const curHum = parseFloat(data.current.hum);
+                    
+                    document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
+                    
+                    globalHistory = data.history;
+                    renderChartsData();
+                } else {
+                    throw new Error('Data format incorrect');
+                }
+                
+            } catch (err) {
+                console.log("Connection Failed, using fallback mock data.", err);
+                // ข้อมูลจำลองหากโหลดไม่สำเร็จ (สำหรับกรณีระบบขัดข้อง)
+                currentCelsius = 28.5;
+                document.getElementById("hum").innerHTML = "💧 62.0%";
+                globalHistory = [
+                    { time: "08:00", temp: 24.1, hum: 68 },
+                    { time: "09:00", temp: 25.5, hum: 65 },
+                    { time: "10:00", temp: 27.2, hum: 60 },
+                    { time: "11:00", temp: 28.5, hum: 62 }
+                ];
+                renderChartsData();
+            }
+        }
+
+        // เริ่มต้นสร้างโครงกราฟเปล่ารอก่อน
         const labels = [];
         const tempData = [];
         const humData = []; 
@@ -405,34 +415,8 @@ setInterval(loadData, 10000);
             updateChartTheme(); 
         }
 
-        async function loadData() {
-            try {
-                const response = await fetch(SCRIPT_URL);
-                const data = await response.json();
-
-                currentCelsius = parseFloat(data.current.temp);
-                globalHistory = data.history;
-
-                const curHum = parseFloat(data.current.hum);
-                document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
-
-                renderChartsData();
-            } catch (err) {
-                console.log("Connection Failed, using fallback mock data.");
-                currentCelsius = 28.5;
-                document.getElementById("hum").innerHTML = "💧 62.0%";
-                globalHistory = [
-                    { time: "08:00", temp: 24.1, hum: 68 },
-                    { time: "09:00", temp: 25.5, hum: 65 },
-                    { time: "10:00", temp: 27.2, hum: 60 },
-                    { time: "11:00", temp: 28.5, hum: 62 }
-                ];
-                renderChartsData();
-            }
-        }
-
+        // สั่งให้ทำงานเมื่อเปิดหน้าเว็บทันทีและทำงานซ้ำทุก 10 วินาที
         loadData();
         setInterval(loadData, 10000); 
     </script>
-</body>
 </html>
