@@ -7,10 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-           1. ตัวแปรสีและโครงสร้างพื้นหลัง (ทะเลตอนกลางวัน / ป่าไม้ตอนกลางคืน)
+           1. ตัวแปรสีและโครงสร้างพื้นหลัง (ทะเลกลางวัน / ป่าไม้กลางคืน)
            ========================================================================== */
         :root {
-            /* ภาพทะเลสำหรับกลางวัน */
             --bg-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
             --card-bg: rgba(255, 255, 255, 0.45);
             --text-color: #0f172a;
@@ -19,13 +18,12 @@
             --astro-bg: rgba(255, 255, 255, 0.3);
         }
         body.dark-mode {
-            /* ภาพป่าสนสำหรับกลางคืน */
             --bg-image: url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80');
-            --card-bg: rgba(15, 23, 42, 0.55);
+            --card-bg: rgba(15, 23, 42, 0.6);
             --text-color: #ffffff;
             --text-muted: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.15);
-            --astro-bg: rgba(0, 0, 0, 0.25);
+            --astro-bg: rgba(0, 0, 0, 0.35);
         }
 
         body { 
@@ -39,42 +37,40 @@
             min-height: 100vh;
         }
 
-        /* 🌟 ระบบพื้นหลังเคลื่อนไหวได้ (Cinematic Panning) */
+        /* 🌟 เอฟเฟกต์พื้นหลังขยับได้ (Cinematic Panning) */
         body::before {
             content: "";
             position: fixed;
-            /* ขยายขนาดเกินหน้าจอเล็กน้อยเพื่อไม่ให้เห็นขอบตอนภาพขยับ */
-            top: -5%; left: -5%; right: -5%; bottom: -5%; 
+            top: -8%; left: -8%; right: -8%; bottom: -8%; 
             background-image: var(--bg-image);
             background-size: cover;
             background-position: center center;
             z-index: -1;
             transition: background-image 0.5s ease-in-out;
-            animation: panBackground 30s infinite alternate ease-in-out;
+            animation: panBackground 25s infinite alternate ease-in-out;
         }
 
         @keyframes panBackground {
             0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(2%, 2%) scale(1.05); }
+            100% { transform: translate(3%, 2%) scale(1.06); }
         }
         
         .container { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; }
         
-        /* สไตล์กระจกใสยอดนิยม (Glassmorphism) */
+        /* สไตล์การ์ดกระจกใส Glassmorphism */
         .card { 
             background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--border-color);
             padding: 16px; 
             margin: 10px auto; 
             border-radius: 20px; 
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08); 
+            box-shadow: 0 6px 24px rgba(0,0,0,0.06); 
             box-sizing: border-box;
             transition: background 0.3s ease, border 0.3s ease;
         }
         
-        /* จัดสรรสัดส่วนการ์ดแฝด */
         .sensor-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -126,11 +122,10 @@
             font-weight: bold;
             border-radius: 15px;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         /* ==========================================================================
-           3. ส่วนดาราศาสตร์ (ปรับปรุงพระจันทร์ไม่ให้ล้นขอบ)
+           3. ส่วนดาราศาสตร์ (แก้ไขปัญหาดวงจันทร์ซ้อนขอบแบบ 100%)
            ========================================================================== */
         .astro-container { 
             display: flex; 
@@ -139,19 +134,39 @@
             gap: 12px; 
             margin-bottom: 8px;
         }
-        .sky-icon { width: 45px; height: 45px; border-radius: 50%; flex-shrink: 0; }
         
-        .sun { background: #fbbf24; box-shadow: 0 0 15px #fbbf24; animation: sunPulse 2s infinite ease-in-out; }
-        @keyframes sunPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        
-        /* 🛠 แก้ไขพระจันทร์: ใช้ inset shadow ให้เงาเว้าเข้าด้านใน ไม่ล้นขอบ */
-        .moon { 
-            background: transparent; 
-            box-shadow: inset -14px -10px 0 0 #e2e8f0; 
-            filter: drop-shadow(0 0 6px rgba(226, 232, 240, 0.4)); /* เรืองแสงเบาๆ */
-            animation: moonPulse 4s infinite alternate ease-in-out;
+        /* กล่องเก็บไอคอน ป้องกันการหลุดล้นขอบ */
+        .icon-box {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
         }
-        @keyframes moonPulse { 0% { transform: rotate(-10deg) scale(1); } 100% { transform: rotate(-5deg) scale(1.03); } }
+
+        .sun { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            background: #fbbf24; 
+            box-shadow: 0 0 15px #fbbf24; 
+            animation: sunPulse 2s infinite ease-in-out; 
+        }
+        @keyframes sunPulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        /* 🛠 แก้ไขดีไซน์พระจันทร์ใหม่: ใช้ Pseudo-element สร้างขอบเว้า วางเซนเตอร์ ไม่ล้นการ์ดแน่นอน */
+        .moon { 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%; 
+            box-shadow: 8px 8px 0 0 #e2e8f0; 
+            transform: rotate(-20px) translate(-4px, -4px);
+            filter: drop-shadow(0 0 4px rgba(226, 232, 240, 0.5));
+            animation: moonPulse 3s infinite alternate ease-in-out;
+        }
+        @keyframes moonPulse { 0% { transform: rotate(-20deg) scale(1); } 100% { transform: rotate(-10deg) scale(1.05); } }
 
         .astro-info { 
             background: var(--astro-bg); 
@@ -163,6 +178,7 @@
             line-height: 1.4; 
             border: 1px solid var(--border-color); 
             flex-grow: 1;
+            transition: background 0.3s ease;
         }
 
         .log-btn { padding: 10px; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -174,15 +190,17 @@
         .stat-label { color: var(--text-muted); font-size: 9px; font-weight: bold; }
         
         .chart-container { position: relative; width: 100%; height: 160px; }
-        h2.main-title { font-size: 20px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.7); margin: 15px 0 2px 0; }
-        p.sub-title { color: #f1f5f9; text-shadow: 0 1px 4px rgba(0,0,0,0.6); margin: 0 0 10px 0; font-size: 12px; font-weight: 600; }
+        h2.main-title { font-size: 20px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.6); margin: 15px 0 2px 0; }
+        p.sub-title { color: #f1f5f9; text-shadow: 0 1px 4px rgba(0,0,0,0.5); margin: 0 0 10px 0; font-size: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
             <div class="astro-container">
-                <div id="sky-icon" class="sky-icon sun"></div>
+                <div class="icon-box">
+                    <div id="sky-icon" class="sun"></div>
+                </div>
                 <div id="astro-info" class="astro-info"></div>
             </div>
             
@@ -237,12 +255,10 @@
         let globalHistory = [];
         let currentUnit = "C";
 
-        // ==========================================================================
-        // 1. ระบบธีมสวิตช์
-        // ==========================================================================
         const toggleSwitch = document.getElementById('theme-checkbox');
         const themeText = document.getElementById('theme-text');
         
+        // บังคับโหลดธีมเริ่มต้น
         const currentTheme = localStorage.getItem('theme');
         if (currentTheme === 'dark-mode') {
             document.body.classList.add('dark-mode');
@@ -250,17 +266,33 @@
             themeText.innerText = 'Dark Mode';
         }
 
+        // 🛠 อัปเกรด: ฟังก์ชันสลับโหมดควบคุมทุกอย่างทันที (ฉากหลัง + ไอคอนดาราศาสตร์)
+        function applyThemeElements() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const skyIcon = document.getElementById('sky-icon');
+            const astroInfo = document.getElementById('astro-info');
+
+            if (isDark) {
+                themeText.innerText = 'Dark Mode';
+                skyIcon.className = 'moon';
+                astroInfo.innerHTML = `<strong>🌙 Amnat Forest Night</strong><br>Phase: Waning Gibbous<br>Mode: Eco Active`;
+            } else {
+                themeText.innerText = 'Light Mode';
+                skyIcon.className = 'sun';
+                astroInfo.innerHTML = `<strong>☀️ Amnat Ocean Day</strong><br>Rise: 05:42 | Set: 18:28<br>Mode: Standard`;
+            }
+            updateChartTheme();
+        }
+
         function switchTheme(e) {
             if (e.target.checked) {
                 document.body.classList.add('dark-mode');
                 localStorage.setItem('theme', 'dark-mode');
-                themeText.innerText = 'Dark Mode';
             } else {
                 document.body.classList.remove('dark-mode');
                 localStorage.setItem('theme', 'light-mode');
-                themeText.innerText = 'Light Mode';
             }
-            updateChartTheme();
+            applyThemeElements();
         }
         toggleSwitch.addEventListener('change', switchTheme, false);
 
@@ -272,27 +304,13 @@
             renderTemperatureData();
         }
 
-        // ==========================================================================
-        // 2. ข้อมูลเวลากลางวัน / กลางคืน
-        // ==========================================================================
-        function updateClockAndSky() {
+        function updateClock() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
-            
-            const hour = now.getHours();
-            const skyIcon = document.getElementById('sky-icon');
-            const astroInfo = document.getElementById('astro-info');
-            
-            if (hour >= 6 && hour < 18) {
-                skyIcon.className = 'sky-icon sun';
-                astroInfo.innerHTML = `<strong>☀️ Amnat Charoen Sun</strong><br>Rise: 05:42 | Set: 18:28<br>Dist: ~151M km`;
-            } else {
-                skyIcon.className = 'sky-icon moon';
-                astroInfo.innerHTML = `<strong>🌙 Amnat Charoen Moon</strong><br>Phase: Waning Gibbous<br>Dist: ~384k km`;
-            }
         }
-        setInterval(updateClockAndSky, 1000);
-        updateClockAndSky();
+        setInterval(updateClock, 1000);
+        updateClock();
+        applyThemeElements(); // รันครั้งแรกเพื่อเซ็ตไอคอนให้ถูกโหมด
 
         let isLogging = true;
         function toggleLogging() {
@@ -308,7 +326,7 @@
         }
 
         // ==========================================================================
-        // 3. ระบบกราฟดึงข้อมูล
+        // ระบบกราฟประวัติและการดึงข้อมูล
         // ==========================================================================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmyqY3xDRfgR6jgtX-xoFAGkzY76CkmgyEOI2NOsh_hgepxMK3V53_ybua-Z4_kEBm/exec";
 
