@@ -305,9 +305,43 @@
         updateClock();
         applyThemeElements(); 
 
-        // อัปเดตลิงก์ Google Apps Script ตัวใหม่ของจริงเรียบร้อยครับ
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0kUb84fF-oV9_eZpvnDjB58_n35R1OqJMhWYtn3km7a8gTLN3ClkSNY7sProdEAJ7/exec";
+        // อัปเดต URL ที่ได้จากการ Deploy รุ่นใหม่ตรงนี้ครับ
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKTYfIqpkkdV4rRLRFX7wddZlAI48JdnogynOfjg6bxnGSvbSwa9_BwZTy5G8xG2E4/exec";
 
+async function loadData() {
+    try {
+        const response = await fetch(SCRIPT_URL);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+
+        // ดึงค่าปัจจุบันมาแสดงผล
+        currentCelsius = parseFloat(data.current.temp);
+        const curHum = parseFloat(data.current.hum);
+        
+        document.getElementById("hum").innerHTML = "💧 " + curHum.toFixed(1) + "%";
+        
+        // ส่งประวัติเข้าสู่ตัวแปร Global เพื่อวาดกราฟ
+        globalHistory = data.history;
+        renderChartsData();
+        
+    } catch (err) {
+        console.log("Connection Failed, using fallback mock data.", err);
+        // ข้อมูลจำลองหากโหลดไม่สำเร็จ
+        currentCelsius = 28.5;
+        document.getElementById("hum").innerHTML = "💧 62.0%";
+        globalHistory = [
+            { time: "08:00", temp: 24.1, hum: 68 },
+            { time: "09:00", temp: 25.5, hum: 65 },
+            { time: "10:00", temp: 27.2, hum: 60 },
+            { time: "11:00", temp: 28.5, hum: 62 }
+        ];
+        renderChartsData();
+    }
+}
+
+// โหลดข้อมูลทุกๆ 10 วินาที
+loadData();
+setInterval(loadData, 10000);
         const labels = [];
         const tempData = [];
         const humData = []; 
